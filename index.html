@@ -1,4 +1,4 @@
-So i have this code : <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -27,7 +27,7 @@ So i have this code : <!DOCTYPE html>
         .header {
             text-align: center;
             color: white;
-            margin-bottom: 30ندوز;
+            margin-bottom: 30px;
             animation: fadeIn 0.5s ease-in;
         }
 
@@ -363,6 +363,10 @@ So i have this code : <!DOCTYPE html>
             'Other': '#6b7280'
         };
 
+        function getRandomColor() {
+            return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        }
+
         // Initialize charts
         const barCtx = document.getElementById('barChart').getContext('2d');
         const pieCtx = document.getElementById('pieChart').getContext('2d');
@@ -473,9 +477,12 @@ So i have this code : <!DOCTYPE html>
             
             financialData.expenses.push(expense);
             
-            // Update categories
+            // Update categories and assign color for new categories
             if (!financialData.categories[category]) {
                 financialData.categories[category] = 0;
+            }
+            if (!categoryColors[category]) {
+                categoryColors[category] = getRandomColor();
             }
             financialData.categories[category] += amount;
             
