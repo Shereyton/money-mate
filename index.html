@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial Tracker Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * {
@@ -12,9 +15,70 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --font-family-classic: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            --font-family: var(--font-family-classic);
+
+            --bg-gradient-start: #667eea;
+            --bg-gradient-end: #764ba2;
+            --text-on-bg: #ffffff;
+
+            --card-bg: #ffffff;
+            --text: #374151;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --surface: #f9fafb;
+            --surface-hover: #f3f4f6;
+
+            --primary: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --accent: #a855f7;
+
+            --primary-gradient-start: #667eea;
+            --primary-gradient-end: #764ba2;
+            --focus-ring: rgba(102, 126, 234, 0.10);
+            --button-shadow: rgba(102, 126, 234, 0.40);
+
+            --chip-bg: var(--surface);
+            --chip-border: var(--border);
+            --toast-bg: rgba(0,0,0,0.85);
+            --toast-text: #fff;
+            --ring-size: 120px;
+        }
+
+        /* Sleek (experimental) theme overrides */
+        body.theme-sleek {
+            --font-family: 'Inter', var(--font-family-classic);
+            --bg-gradient-start: #0f172a;
+            --bg-gradient-end: #1e293b;
+            --text-on-bg: #e5e7eb;
+
+            --card-bg: rgba(255, 255, 255, 0.06);
+            --text: #e5e7eb;
+            --muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.12);
+            --surface: rgba(255,255,255,0.04);
+            --surface-hover: rgba(255,255,255,0.07);
+
+            --primary: #8b5cf6; /* violet */
+            --success: #22c55e; /* green */
+            --danger: #f43f5e;  /* rose */
+            --danger-hover: #e11d48;
+            --accent: #06b6d4; /* cyan */
+
+            --primary-gradient-start: #8b5cf6;
+            --primary-gradient-end: #06b6d4;
+            --focus-ring: rgba(139, 92, 246, 0.25);
+            --button-shadow: rgba(139, 92, 246, 0.50);
+            --toast-bg: rgba(17,24,39,0.9);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            background-size: 120% 120%;
             min-height: 100vh;
             padding: 20px;
         }
@@ -26,7 +90,7 @@
 
         .header {
             text-align: center;
-            color: white;
+            color: var(--text-on-bg);
             margin-bottom: 30px;
             animation: fadeIn 0.5s ease-in;
         }
@@ -50,7 +114,7 @@
         }
 
         .card {
-            background: white;
+            background: var(--card-bg);
             border-radius: 20px;
             padding: 25px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
@@ -76,7 +140,7 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, var(--primary-gradient-start), var(--primary-gradient-end));
             animation: shimmer 2s infinite;
         }
 
@@ -88,26 +152,26 @@
         }
 
         .metric-value.positive {
-            color: #10b981;
+            color: var(--success);
         }
 
         .metric-value.negative {
-            color: #ef4444;
+            color: var(--danger);
         }
 
         .metric-value.neutral {
-            color: #6366f1;
+            color: var(--primary);
         }
 
         .metric-label {
-            color: #6b7280;
+            color: var(--muted);
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .input-section {
-            background: white;
+            background: var(--card-bg);
             border-radius: 20px;
             padding: 30px;
             margin-bottom: 30px;
@@ -121,27 +185,31 @@
         .input-group label {
             display: block;
             margin-bottom: 8px;
-            color: #374151;
+            color: var(--text);
             font-weight: 600;
         }
 
         .input-group input, .input-group select {
             width: 100%;
             padding: 12px 15px;
-            border: 2px solid #e5e7eb;
+            border: 2px solid var(--border);
             border-radius: 10px;
             font-size: 1rem;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background: var(--surface);
+            color: var(--text);
         }
 
         .input-group input:focus, .input-group select:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--focus-ring);
         }
 
         .btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
             color: white;
             border: none;
             padding: 12px 30px;
@@ -154,12 +222,26 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 20px var(--button-shadow);
         }
 
         .btn:active {
             transform: translateY(0);
         }
+
+        /* Subtle sheen effect on buttons */
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.25), transparent 50%);
+            transform: scale(0);
+            transition: transform 0.35s ease;
+        }
+        .btn:hover::before { transform: scale(1); }
 
         .expense-list {
             margin-top: 20px;
@@ -174,14 +256,20 @@
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 10px;
-            background: #f9fafb;
+            background: var(--surface);
             transition: background 0.3s ease;
             animation: fadeIn 0.3s ease;
         }
 
         .expense-item:hover {
-            background: #f3f4f6;
+            background: var(--surface-hover);
         }
+
+        /* Chips */
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; margin-bottom: 4px; }
+        .chip { border: 1px solid var(--chip-border); background: var(--chip-bg); color: var(--text); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-weight: 600; transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease; }
+        .chip:hover { transform: translateY(-1px); }
+        .chip.active { background: color-mix(in srgb, var(--chip-bg) 70%, var(--chip-color)); color: var(--text-on-bg); border-color: transparent; }
 
         .expense-category {
             display: inline-block;
@@ -193,7 +281,7 @@
         }
 
         .delete-btn {
-            background: #ef4444;
+            background: var(--danger);
             color: white;
             border: none;
             padding: 6px 12px;
@@ -203,18 +291,18 @@
         }
 
         .delete-btn:hover {
-            background: #dc2626;
+            background: var(--danger-hover);
         }
 
         .charts-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 30px;
             margin-top: 30px;
         }
 
         .chart-container {
-            background: white;
+            background: var(--card-bg);
             border-radius: 20px;
             padding: 25px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
@@ -223,9 +311,18 @@
         .chart-title {
             font-size: 1.2rem;
             font-weight: 600;
-            color: #374151;
+            color: var(--text);
             margin-bottom: 20px;
         }
+
+        /* Responsive form row for inputs */
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+        .form-row .input-group { margin: 0; }
 
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -269,10 +366,103 @@
             .dashboard {
                 grid-template-columns: 1fr;
             }
+            .form-row { grid-template-columns: 1fr; }
+            .form-row .btn { width: 100%; }
         }
+
+        /* Sleek theme extras */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body.theme-sleek {
+            animation: gradientShift 20s ease infinite;
+        }
+
+        body.theme-sleek .card,
+        body.theme-sleek .input-section,
+        body.theme-sleek .chart-container {
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+
+        /* Progress ring */
+        .progress-ring { position: relative; width: var(--ring-size); height: var(--ring-size); margin: 10px auto 0; }
+        .progress-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        .ring-bg { stroke: rgba(0,0,0,0.08); }
+        body.theme-sleek .ring-bg { stroke: rgba(255,255,255,0.12); }
+        .ring-progress { stroke: var(--primary); transition: stroke-dashoffset 400ms ease, stroke 200ms ease; }
+        .progress-value { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; color: var(--text); }
+
+        /* Toasts */
+        #toastContainer { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 10000; }
+        .toast { background: var(--toast-bg); color: var(--toast-text); padding: 10px 14px; border-radius: 10px; opacity: 0; transform: translateY(8px); transition: opacity .2s ease, transform .2s ease; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: linear-gradient(135deg, var(--success), var(--accent)); }
+        .toast.warn { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+        .toast.error { background: linear-gradient(135deg, #ef4444, #7f1d1d); }
+
+        /* Ripple */
+        .btn { position: relative; overflow: hidden; }
+        .ripple { position: absolute; border-radius: 50%; transform: scale(0); background: rgba(255,255,255,0.5); animation: ripple .6s linear; pointer-events: none; }
+        @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+        /* Shake */
+        .shake { animation: shake .4s; }
+        @keyframes shake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
+
+        /* Metric pop */
+        .pop { animation: pop .35s ease; }
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+        /* Reveal on scroll */
+        .card, .chart-container { opacity: 0; transform: translateY(16px); transition: opacity .4s ease, transform .4s ease; }
+        .in-view { opacity: 1 !important; transform: translateY(0) !important; }
+
+        /* Emoji burst */
+        .burst { position: fixed; z-index: 9999; transition: transform .8s ease, opacity .8s ease; will-change: transform, opacity; }
+
+        /* Theme toggle control */
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+        .theme-toggle .toggle-label { font-weight: 600; font-size: 0.9rem; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface); border: 1px solid var(--border); transition: .2s; border-radius: 999px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 50%; transition: .2s; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        input:checked + .slider { background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end)); border-color: transparent; }
+        input:checked + .slider:before { transform: translate(20px, -50%); }
     </style>
 </head>
 <body>
+    <div class="theme-toggle" title="Quick settings">
+        <label class="switch" title="Toggle Sleek Mode (experimental)">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider"></span>
+        </label>
+        <span class="toggle-label">Sleek Mode</span>
+        <label class="switch" style="margin-left:10px;" title="Toggle extra animations/effects">
+            <input type="checkbox" id="fxToggle">
+            <span class="slider"></span>
+        </label>
+        <span class="toggle-label">FX Mode</span>
+    </div>
     <div class="container">
         <div class="header">
             <h1>💰 Financial Tracker Pro</h1>
@@ -300,10 +490,20 @@
                 <div class="metric-label">Disposable Income</div>
                 <div class="metric-value positive" id="disposableDisplay">$0</div>
             </div>
+            <div class="card metric-card">
+                <div class="metric-label">Spend Rate</div>
+                <div class="progress-ring" id="spendRing">
+                    <svg width="120" height="120">
+                        <circle class="ring-bg" cx="60" cy="60" r="52" stroke-width="12" fill="none" />
+                        <circle class="ring-progress" cx="60" cy="60" r="52" stroke-width="12" fill="none" stroke-linecap="round" />
+                    </svg>
+                    <div class="progress-value" id="spendRateLabel">0%</div>
+                </div>
+            </div>
         </div>
 
         <div class="input-section">
-            <h2 style="margin-bottom: 20px; color: #374151;">Financial Input</h2>
+            <h2 style="margin-bottom: 20px; color: var(--text);">Financial Input</h2>
 
             <div class="input-group">
                 <label for="incomeType">Income Input Type</label>
@@ -319,28 +519,28 @@
             </div>
 
             <div id="checkSection" style="display: none;">
-                <h3 style="margin: 25px 0 15px; color: #374151;">Add Check</h3>
-                <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end;">
-                    <div class="input-group" style="margin: 0;">
+                <h3 style="margin: 25px 0 15px; color: var(--text);">Add Check</h3>
+                <div class="form-row">
+                    <div class="input-group">
                         <label for="checkNumber">Check #</label>
                         <input type="text" id="checkNumber" placeholder="12345">
                     </div>
-                    <div class="input-group" style="margin: 0;">
+                    <div class="input-group">
                         <label for="checkAmount">Amount ($)</label>
                         <input type="number" id="checkAmount" placeholder="0.00" step="0.01">
                     </div>
-                    <button class="btn" onclick="addCheck()">Add Check</button>
+                    <button class="btn" onclick="addCheck(event)">Add Check</button>
                 </div>
                 <div class="expense-list" id="checkList" style="margin-top: 20px;"></div>
             </div>
 
-            <h3 style="margin: 25px 0 15px; color: #374151;">Add Expense</h3>
-            <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end;">
-                <div class="input-group" style="margin: 0;">
+            <h3 style="margin: 25px 0 15px; color: var(--text);">Add Expense</h3>
+            <div class="form-row">
+                <div class="input-group">
                     <label for="expenseAmount">Amount ($)</label>
                     <input type="number" id="expenseAmount" placeholder="0.00" step="0.01">
                 </div>
-                <div class="input-group" style="margin: 0;">
+                <div class="input-group">
                     <label for="expenseCategory">Category</label>
                     <select id="expenseCategory">
                         <option value="Housing">🏠 Housing</option>
@@ -353,9 +553,9 @@
                         <option value="Other">📦 Other</option>
                     </select>
                 </div>
-                <button class="btn" onclick="addExpense()">Add Expense</button>
+                <button class="btn" onclick="addExpense(event)">Add Expense</button>
             </div>
-
+            <div class="chip-group" id="filterChips"></div>
             <div class="expense-list" id="expenseList"></div>
         </div>
 
@@ -370,6 +570,8 @@
             </div>
         </div>
     </div>
+
+    <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
     <script>
         // Data storage
@@ -400,6 +602,17 @@
         const barCtx = document.getElementById('barChart').getContext('2d');
         const pieCtx = document.getElementById('pieChart').getContext('2d');
 
+        // Chart palette helper (theme-aware)
+        function getCssVar(name) { return getComputedStyle(document.body).getPropertyValue(name).trim(); }
+        function hexToRgba(hex, alpha) {
+            const h = hex.replace('#','');
+            const bigint = parseInt(h, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
         const barChart = new Chart(barCtx, {
             type: 'bar',
             data: {
@@ -408,16 +621,16 @@
                     label: 'Amount ($)',
                     data: [0, 0, 0, 0],
                     backgroundColor: [
-                        'rgba(102, 126, 234, 0.8)',
-                        'rgba(239, 68, 68, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(168, 85, 247, 0.8)'
+                        hexToRgba(getCssVar('--primary') || '#667eea', 0.8),
+                        hexToRgba(getCssVar('--danger') || '#ef4444', 0.8),
+                        hexToRgba(getCssVar('--success') || '#10b981', 0.8),
+                        hexToRgba(getCssVar('--accent') || '#a855f7', 0.8)
                     ],
                     borderColor: [
-                        'rgba(102, 126, 234, 1)',
-                        'rgba(239, 68, 68, 1)',
-                        'rgba(16, 185, 129, 1)',
-                        'rgba(168, 85, 247, 1)'
+                        hexToRgba(getCssVar('--primary') || '#667eea', 1),
+                        hexToRgba(getCssVar('--danger') || '#ef4444', 1),
+                        hexToRgba(getCssVar('--success') || '#10b981', 1),
+                        hexToRgba(getCssVar('--accent') || '#a855f7', 1)
                     ],
                     borderWidth: 2
                 }]
@@ -438,7 +651,7 @@
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value.toLocaleString();
+                                return '$' + Number(value).toLocaleString();
                             }
                         }
                     }
@@ -473,7 +686,9 @@
                             label: function(context) {
                                 const label = context.label || '';
                                 const value = '$' + context.parsed.toLocaleString();
-                                const percentage = ((context.parsed / financialData.expenses.reduce((a, b) => a + b.amount, 0)) * 100).toFixed(1);
+                                const total = financialData.expenses.reduce((a, b) => a + b.amount, 0);
+                                if (!total) return label + ': ' + value;
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
                                 return label + ': ' + value + ' (' + percentage + '%)';
                             }
                         }
@@ -501,7 +716,7 @@
             }
         });
 
-        function addCheck() {
+        function addCheck(ev) {
             const number = document.getElementById('checkNumber').value.trim();
             const amount = parseFloat(document.getElementById('checkAmount').value);
             if (!number || isNaN(amount) || amount <= 0) return;
@@ -519,6 +734,8 @@
 
             updateIncomeFromChecks();
             renderChecks();
+            showToast(`Added check #${number} for $${amount.toFixed(2)}`, 'info');
+            if (fxEnabled) burst(ev);
         }
 
         function deleteCheck(id) {
@@ -527,6 +744,7 @@
                 financialData.checks.splice(idx, 1);
                 updateIncomeFromChecks();
                 renderChecks();
+                showToast('Deleted check', 'warn');
             }
         }
 
@@ -537,8 +755,8 @@
                 const item = document.createElement('div');
                 item.className = 'expense-item';
                 item.innerHTML = `
-                    <div style="color: #374151; font-weight: 600;">#${check.number}</div>
-                    <div style="font-weight: 600; color: #374151;">$${check.amount.toFixed(2)}</div>
+                    <div style="color: var(--text); font-weight: 600;">#${check.number}</div>
+                    <div style="font-weight: 600; color: var(--text);">$${check.amount.toFixed(2)}</div>
                     <button class="delete-btn" onclick="deleteCheck(${check.id})">Delete</button>
                 `;
                 list.appendChild(item);
@@ -551,12 +769,13 @@
         }
 
         // Add expense function
-        function addExpense() {
+        function addExpense(ev) {
             const amount = parseFloat(document.getElementById('expenseAmount').value);
             const category = document.getElementById('expenseCategory').value;
             
             if (!amount || amount <= 0) {
-                alert('Please enter a valid expense amount');
+                shake('#expenseAmount');
+                showToast('Enter a valid expense amount', 'error');
                 return;
             }
             
@@ -582,6 +801,9 @@
             
             updateDisplay();
             renderExpenses();
+            renderFilterChips();
+            showToast(`Added ${category} $${amount.toFixed(2)}`, 'success');
+            if (fxEnabled) burst(ev);
         }
 
         // Delete expense function
@@ -596,15 +818,20 @@
                 financialData.expenses.splice(expenseIndex, 1);
                 updateDisplay();
                 renderExpenses();
+                renderFilterChips();
+                showToast('Expense deleted', 'warn');
             }
         }
 
         // Render expenses list
+        let activeFilter = 'All';
         function renderExpenses() {
             const expenseList = document.getElementById('expenseList');
             expenseList.innerHTML = '';
             
-            financialData.expenses.forEach(expense => {
+            financialData.expenses
+                .filter(exp => activeFilter === 'All' || exp.category === activeFilter)
+                .forEach(expense => {
                 const item = document.createElement('div');
                 item.className = 'expense-item';
                 item.innerHTML = `
@@ -613,10 +840,24 @@
                             ${expense.category}
                         </span>
                     </div>
-                    <div style="font-weight: 600; color: #374151;">$${expense.amount.toFixed(2)}</div>
+                    <div style="font-weight: 600; color: var(--text);">$${expense.amount.toFixed(2)}</div>
                     <button class="delete-btn" onclick="deleteExpense(${expense.id})">Delete</button>
                 `;
                 expenseList.appendChild(item);
+            });
+        }
+
+        function renderFilterChips() {
+            const chips = document.getElementById('filterChips');
+            const cats = ['All', ...Object.keys(financialData.categories)];
+            chips.innerHTML = '';
+            cats.forEach(cat => {
+                const el = document.createElement('button');
+                el.className = 'chip' + (cat === activeFilter ? ' active' : '');
+                el.textContent = cat;
+                el.style.setProperty('--chip-color', categoryColors[cat] || getCssVar('--primary'));
+                el.onclick = () => { activeFilter = cat; renderExpenses(); renderFilterChips(); };
+                chips.appendChild(el);
             });
         }
 
@@ -652,35 +893,219 @@
             pieChart.data.datasets[0].data = categoryValues;
             pieChart.data.datasets[0].backgroundColor = colors;
             pieChart.update();
+
+            // Update Spend Rate ring
+            const percent = financialData.income > 0 ? Math.min(100, Math.round((totalExpenses / financialData.income) * 100)) : 0;
+            updateRing(percent);
+
+            popMetrics();
         }
 
-        // Animate value changes
+        // Animate value changes with timer dedupe and robust parsing
+        const valueTimers = {};
         function animateValue(elementId, value) {
             const element = document.getElementById(elementId);
-            const current = parseFloat(element.textContent.replace('$', '').replace(',', '')) || 0;
-            const increment = (value - current) / 20;
+            if (valueTimers[elementId]) { clearInterval(valueTimers[elementId]); }
+            const current = parseFloat((element.textContent || '').replace(/[^0-9.-]/g, '')) || 0;
+            const steps = 20;
+            const increment = (value - current) / steps;
             let step = 0;
             
-            const timer = setInterval(() => {
+            valueTimers[elementId] = setInterval(() => {
                 step++;
                 const newValue = current + (increment * step);
                 element.textContent = '$' + newValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                 
-                if (step >= 20) {
-                    clearInterval(timer);
+                if (step >= steps) {
+                    clearInterval(valueTimers[elementId]);
                     element.textContent = '$' + value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                 }
             }, 25);
         }
 
-        // Enter key support for expense input
-        document.getElementById('expenseAmount').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addExpense();
-            }
+        // Enter key support for inputs (use keydown)
+        document.getElementById('expenseAmount').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { addExpense(); }
+        });
+        document.getElementById('checkAmount').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { addCheck(); }
         });
 
+        function updateChartsForTheme() {
+            try {
+                const primary = getCssVar('--primary') || '#667eea';
+                const danger = getCssVar('--danger') || '#ef4444';
+                const success = getCssVar('--success') || '#10b981';
+                const accent = getCssVar('--accent') || '#a855f7';
+                const textColor = getCssVar('--text') || '#374151';
+
+                const bg = [
+                    hexToRgba(primary, 0.8),
+                    hexToRgba(danger, 0.8),
+                    hexToRgba(success, 0.8),
+                    hexToRgba(accent, 0.8)
+                ];
+                const border = [
+                    hexToRgba(primary, 1),
+                    hexToRgba(danger, 1),
+                    hexToRgba(success, 1),
+                    hexToRgba(accent, 1)
+                ];
+                barChart.data.datasets[0].backgroundColor = bg;
+                barChart.data.datasets[0].borderColor = border;
+                barChart.update('none');
+
+                // Update global text color for axes/legend/tooltips
+                Chart.defaults.color = textColor;
+            } catch (e) { /* no-op */ }
+        }
+
+        // Theme toggle logic with persistence
+        const themeToggle = document.getElementById('themeToggle');
+        const fxToggle = document.getElementById('fxToggle');
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'sleek') {
+            document.body.classList.add('theme-sleek');
+            if (themeToggle) themeToggle.checked = true;
+        }
+        updateChartsForTheme();
+
+        if (themeToggle) {
+            themeToggle.addEventListener('change', () => {
+                const enabled = themeToggle.checked;
+                document.body.classList.toggle('theme-sleek', enabled);
+                localStorage.setItem('theme', enabled ? 'sleek' : 'classic');
+                updateChartsForTheme();
+            });
+        }
+
+        // FX Mode
+        let fxEnabled = localStorage.getItem('fx') === 'on';
+        if (fxToggle) { fxToggle.checked = fxEnabled; }
+        if (fxToggle) {
+            fxToggle.addEventListener('change', () => {
+                fxEnabled = fxToggle.checked;
+                localStorage.setItem('fx', fxEnabled ? 'on' : 'off');
+            });
+        }
+
+        // Interactive: ripple on buttons
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn');
+            if (!btn) return;
+            const rect = btn.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple';
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+            ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+            btn.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        });
+
+        // Card tilt effect
+        function attachTilt() {
+            document.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    if (!fxEnabled) return card.style.transform = '';
+                    const rect = card.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) / rect.width;
+                    const y = (e.clientY - rect.top) / rect.height;
+                    const tiltX = (y - 0.5) * -6;
+                    const tiltY = (x - 0.5) * 6;
+                    card.style.transform = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = '';
+                });
+            });
+        }
+
+        // Toast notifications
+        function showToast(message, type='info') {
+            const box = document.createElement('div');
+            box.className = `toast ${type}`;
+            box.textContent = message;
+            document.getElementById('toastContainer').appendChild(box);
+            setTimeout(() => box.classList.add('show'));
+            setTimeout(() => { box.classList.remove('show'); box.remove(); }, 2500);
+        }
+
+        // Shake invalid input
+        function shake(selector) {
+            const el = document.querySelector(selector);
+            if (!el) return;
+            el.classList.add('shake');
+            setTimeout(() => el.classList.remove('shake'), 400);
+        }
+
+        // Emoji burst
+        function burst(ev) {
+            try {
+                const origin = ev && ev.clientX ? {x: ev.clientX, y: ev.clientY} : {x: window.innerWidth/2, y: window.innerHeight/2};
+                for (let i=0; i<12; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'burst';
+                    span.textContent = ['💸','✨','💜','💰','🎉'][i%5];
+                    document.body.appendChild(span);
+                    const angle = Math.random()*2*Math.PI;
+                    const dist = 60 + Math.random()*60;
+                    const x = origin.x + Math.cos(angle)*dist;
+                    const y = origin.y + Math.sin(angle)*dist;
+                    span.style.left = origin.x + 'px';
+                    span.style.top = origin.y + 'px';
+                    requestAnimationFrame(() => {
+                        span.style.transform = `translate(${x-origin.x}px, ${y-origin.y}px) scale(1)`;
+                        span.style.opacity = '0';
+                    });
+                    setTimeout(() => span.remove(), 800);
+                }
+            } catch (_) {}
+        }
+
+        // Spend Rate ring helpers
+        const ring = document.querySelector('#spendRing .ring-progress');
+        const ringBg = document.querySelector('#spendRing .ring-bg');
+        const R = 52, CIRC = 2 * Math.PI * R;
+        if (ring) { ring.style.strokeDasharray = `${CIRC}`; ring.style.strokeDashoffset = `${CIRC}`; }
+        if (ringBg) { ringBg.style.strokeDasharray = `${CIRC}`; ringBg.style.strokeDashoffset = '0'; }
+        function updateRing(percent) {
+            const label = document.getElementById('spendRateLabel');
+            if (!ring || !label) return;
+            const offset = CIRC * (1 - percent/100);
+            ring.style.strokeDashoffset = `${offset}`;
+            label.textContent = `${percent}%`;
+            const col = percent < 50 ? getCssVar('--success') : (percent < 80 ? getCssVar('--primary') : getCssVar('--danger'));
+            ring.style.stroke = col || '#10b981';
+            ringBg.style.stroke = hexToRgba(col || '#10b981', 0.15);
+        }
+
+        // Pop metric values on update
+        function popMetrics() {
+            if (!fxEnabled) return;
+            ['incomeDisplay','yearlyDisplay','expensesDisplay','savingsDisplay','disposableDisplay'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.remove('pop');
+                void el.offsetWidth; // reflow to restart animation
+                el.classList.add('pop');
+            });
+        }
+
+        // Reveal-on-scroll
+        const io = new IntersectionObserver((entries)=>{
+            entries.forEach(e=>{
+                if (e.isIntersecting) e.target.classList.add('in-view');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.card, .chart-container').forEach(el=>io.observe(el));
+
+        // Attach interactivity
+        attachTilt();
+
         // Initialize display
+        renderFilterChips();
         updateDisplay();
     </script>
 </body>
