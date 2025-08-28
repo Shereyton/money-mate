@@ -1,0 +1,18 @@
+#!/bin/sh
+# Local guardrail: block pushes to main
+
+protected_branch="main"
+
+while read local_ref local_sha remote_ref remote_sha
+do
+  branch_name=$(echo "$remote_ref" | sed 's#refs/heads/##')
+  if [ "$branch_name" = "$protected_branch" ]; then
+    echo "\nPush to '$protected_branch' is blocked by local hook."
+    echo "Use 'MoneyPlayground' and open a PR into 'main'."
+    echo "If you really need to push, temporarily bypass with: git push --no-verify (not recommended).\n"
+    exit 1
+  fi
+done
+
+exit 0
+

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Tracker Pro — Preview</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .preview-banner {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: #111827;
+            color: #fff;
+            text-align: center;
+            padding: 10px 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        .header { text-align: center; color: white; margin-bottom: 30px; animation: fadeIn 0.5s ease-in; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .header p { opacity: 0.9; font-size: 1.1rem; }
+
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
+
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); transition: transform 0.3s ease, box-shadow 0.3s ease; animation: slideUp 0.6s ease-out; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 50px rgba(0,0,0,0.15); }
+
+        .metric-card { text-align: center; position: relative; overflow: hidden; }
+        .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #667eea, #764ba2); animation: shimmer 2s infinite; }
+
+        .metric-value { font-size: 2.5rem; font-weight: bold; margin: 10px 0; transition: transform 0.3s ease; }
+        .metric-value.positive { color: #10b981; }
+        .metric-value.negative { color: #ef4444; }
+        .metric-value.neutral { color: #6366f1; }
+        .metric-label { color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .input-section { background: white; border-radius: 20px; padding: 30px; margin-bottom: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; color: #374151; font-weight: 600; }
+        .input-group input, .input-group select { width: 100%; padding: 12px 15px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 1rem; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
+        .input-group input:focus, .input-group select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+
+        .form-row { display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end; }
+        .form-row .input-group { margin: 0; }
+
+        .btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+        .btn:active { transform: translateY(0); }
+
+        .expense-list { margin-top: 20px; max-height: 300px; overflow-y: auto; }
+        .expense-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: 10px; margin-bottom: 10px; background: #f9fafb; transition: background 0.3s ease; animation: fadeIn 0.3s ease; }
+        .expense-item:hover { background: #f3f4f6; }
+        .expense-category { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: white; }
+        .delete-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: background 0.3s ease; }
+        .delete-btn:hover { background: #dc2626; }
+
+        .charts-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; margin-top: 30px; }
+        .chart-container { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .chart-title { font-size: 1.2rem; font-weight: 600; color: #374151; margin-bottom: 20px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .charts-section { grid-template-columns: 1fr; }
+            .dashboard { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .form-row .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-banner">Preview Mode — Not Official</div>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Financial Tracker Pro</h1>
+            <p>Your complete financial clarity dashboard</p>
+        </div>
+
+        <div class="dashboard">
+            <div class="card metric-card">
+                <div class="metric-label">Monthly Income</div>
+                <div class="metric-value neutral" id="incomeDisplay">$0</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-label">Yearly Estimate</div>
+                <div class="metric-value neutral" id="yearlyDisplay">$0</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-label">Total Expenses</div>
+                <div class="metric-value negative" id="expensesDisplay">$0</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-label">Total Savings</div>
+                <div class="metric-value positive pulse" id="savingsDisplay">$0</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-label">Disposable Income</div>
+                <div class="metric-value positive" id="disposableDisplay">$0</div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <h2 style="margin-bottom: 20px; color: #374151;">Financial Input</h2>
+
+            <div class="input-group">
+                <label for="incomeType">Income Input Type</label>
+                <select id="incomeType">
+                    <option value="monthly">Monthly Income</option>
+                    <option value="checks">Checks</option>
+                </select>
+            </div>
+
+            <div class="input-group" id="monthlySection">
+                <label for="income">Monthly Income ($)</label>
+                <input type="number" id="income" placeholder="Enter your monthly income" step="0.01">
+            </div>
+
+            <div id="checkSection" style="display: none;">
+                <h3 style="margin: 25px 0 15px; color: #374151;">Add Check</h3>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label for="checkNumber">Check #</label>
+                        <input type="text" id="checkNumber" placeholder="12345">
+                    </div>
+                    <div class="input-group">
+                        <label for="checkAmount">Amount ($)</label>
+                        <input type="number" id="checkAmount" placeholder="0.00" step="0.01">
+                    </div>
+                    <button class="btn" id="addCheckBtn" onclick="addCheck()">Add Check</button>
+                </div>
+                <div class="expense-list" id="checkList" style="margin-top: 20px;"></div>
+            </div>
+
+            <h3 style="margin: 25px 0 15px; color: #374151;">Add Expense</h3>
+            <div class="form-row">
+                <div class="input-group">
+                    <label for="expenseAmount">Amount ($)</label>
+                    <input type="number" id="expenseAmount" placeholder="0.00" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label for="expenseCategory">Category</label>
+                    <select id="expenseCategory">
+                        <option value="Housing">🏠 Housing</option>
+                        <option value="Food">🍔 Food</option>
+                        <option value="Transport">🚗 Transport</option>
+                        <option value="Utilities">💡 Utilities</option>
+                        <option value="Entertainment">🎮 Entertainment</option>
+                        <option value="Healthcare">🏥 Healthcare</option>
+                        <option value="Shopping">🛍️ Shopping</option>
+                        <option value="Other">📦 Other</option>
+                    </select>
+                </div>
+                <button class="btn" id="addExpenseBtn" onclick="addExpense()">Add Expense</button>
+            </div>
+
+            <div class="expense-list" id="expenseList"></div>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3 class="chart-title">📊 Income vs Expenses</h3>
+                <canvas id="barChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">📈 Expense Categories</h3>
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let financialData = { income: 0, expenses: [], categories: {}, checks: [] };
+
+        // Category colors
+        const categoryColors = {
+            'Housing': '#ef4444', 'Food': '#f97316', 'Transport': '#eab308', 'Utilities': '#84cc16',
+            'Entertainment': '#06b6d4', 'Healthcare': '#8b5cf6', 'Shopping': '#ec4899', 'Other': '#6b7280'
+        };
+
+        function getRandomColor() { return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'); }
+
+        // Charts
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+
+        const barChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Income', 'Expenses', 'Savings', 'Disposable'],
+                datasets: [{
+                    label: 'Amount ($)',
+                    data: [0, 0, 0, 0],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(168, 85, 247, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(102, 126, 234, 1)', 'rgba(239, 68, 68, 1)', 'rgba(16, 185, 129, 1)', 'rgba(168, 85, 247, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 750, easing: 'easeInOutQuart' },
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: (value) => '$' + Number(value).toLocaleString() }
+                    }
+                }
+            }
+        });
+
+        const pieChart = new Chart(pieCtx, {
+            type: 'doughnut',
+            data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderColor: '#ffffff', borderWidth: 2 }] },
+            options: {
+                responsive: true,
+                animation: { animateRotate: true, animateScale: true, duration: 750 },
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = '$' + context.parsed.toLocaleString();
+                                const total = financialData.expenses.reduce((a, b) => a + b.amount, 0);
+                                if (!total) return label + ': ' + value;
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Income input listeners
+        document.getElementById('income').addEventListener('input', function(e) {
+            financialData.income = parseFloat(e.target.value) || 0;
+            updateDisplay();
+        });
+        document.getElementById('incomeType').addEventListener('change', function(e) {
+            if (e.target.value === 'monthly') {
+                document.getElementById('monthlySection').style.display = 'block';
+                document.getElementById('checkSection').style.display = 'none';
+                financialData.income = parseFloat(document.getElementById('income').value) || 0;
+                updateDisplay();
+            } else {
+                document.getElementById('monthlySection').style.display = 'none';
+                document.getElementById('checkSection').style.display = 'block';
+                updateIncomeFromChecks();
+            }
+        });
+
+        function addCheck() {
+            const number = document.getElementById('checkNumber').value.trim();
+            const amount = parseFloat(document.getElementById('checkAmount').value);
+            if (!number || isNaN(amount) || amount <= 0) return;
+            const check = { id: Date.now(), number, amount };
+            financialData.checks.push(check);
+            document.getElementById('checkNumber').value = '';
+            document.getElementById('checkAmount').value = '';
+            updateIncomeFromChecks();
+            renderChecks();
+        }
+        function deleteCheck(id) {
+            const idx = financialData.checks.findIndex(c => c.id === id);
+            if (idx !== -1) { financialData.checks.splice(idx, 1); updateIncomeFromChecks(); renderChecks(); }
+        }
+        function renderChecks() {
+            const list = document.getElementById('checkList');
+            list.innerHTML = '';
+            financialData.checks.forEach(check => {
+                const item = document.createElement('div');
+                item.className = 'expense-item';
+                item.innerHTML = `
+                    <div style="color: #374151; font-weight: 600;">#${check.number}</div>
+                    <div style="font-weight: 600; color: #374151;">$${check.amount.toFixed(2)}</div>
+                    <button class=\"delete-btn\" onclick=\"deleteCheck(${check.id})\">Delete</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+        function updateIncomeFromChecks() {
+            financialData.income = financialData.checks.reduce((sum, c) => sum + c.amount, 0);
+            updateDisplay();
+        }
+
+        // Add expense
+        function addExpense() {
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const category = document.getElementById('expenseCategory').value;
+            if (!amount || amount <= 0) { alert('Please enter a valid expense amount'); return; }
+            const expense = { id: Date.now(), amount, category };
+            financialData.expenses.push(expense);
+            if (!financialData.categories[category]) { financialData.categories[category] = 0; }
+            if (!categoryColors[category]) { categoryColors[category] = getRandomColor(); }
+            financialData.categories[category] += amount;
+            document.getElementById('expenseAmount').value = '';
+            updateDisplay();
+            renderExpenses();
+        }
+        function deleteExpense(id) {
+            const expenseIndex = financialData.expenses.findIndex(e => e.id === id);
+            if (expenseIndex !== -1) {
+                const expense = financialData.expenses[expenseIndex];
+                financialData.categories[expense.category] -= expense.amount;
+                if (financialData.categories[expense.category] <= 0) { delete financialData.categories[expense.category]; }
+                financialData.expenses.splice(expenseIndex, 1);
+                updateDisplay();
+                renderExpenses();
+            }
+        }
+        function renderExpenses() {
+            const expenseList = document.getElementById('expenseList');
+            expenseList.innerHTML = '';
+            financialData.expenses.forEach(expense => {
+                const item = document.createElement('div');
+                item.className = 'expense-item';
+                item.innerHTML = `
+                    <div>
+                        <span class=\"expense-category\" style=\"background: ${categoryColors[expense.category]}\">${expense.category}</span>
+                    </div>
+                    <div style=\"font-weight: 600; color: #374151;\">$${expense.amount.toFixed(2)}</div>
+                    <button class=\"delete-btn\" onclick=\"deleteExpense(${expense.id})\">Delete</button>
+                `;
+                expenseList.appendChild(item);
+            });
+        }
+
+        // Animated values with timer dedupe and robust parsing
+        const valueTimers = {};
+        function animateValue(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (valueTimers[elementId]) { clearInterval(valueTimers[elementId]); }
+            const current = parseFloat((element.textContent || '').replace(/[^0-9.-]/g, '')) || 0;
+            const steps = 20;
+            const increment = (value - current) / steps;
+            let step = 0;
+            valueTimers[elementId] = setInterval(() => {
+                step++;
+                const newValue = current + (increment * step);
+                element.textContent = '$' + newValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                if (step >= steps) {
+                    clearInterval(valueTimers[elementId]);
+                    element.textContent = '$' + value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                }
+            }, 25);
+        }
+
+        // Update display
+        function updateDisplay() {
+            const totalExpenses = financialData.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const savings = Math.max(0, financialData.income * 0.2);
+            const disposable = Math.max(0, financialData.income - totalExpenses - savings);
+            const yearly = financialData.income * 12;
+            animateValue('incomeDisplay', financialData.income);
+            animateValue('yearlyDisplay', yearly);
+            animateValue('expensesDisplay', totalExpenses);
+            animateValue('savingsDisplay', savings);
+            animateValue('disposableDisplay', disposable);
+            barChart.data.datasets[0].data = [financialData.income, totalExpenses, savings, disposable];
+            barChart.update();
+            const categories = Object.keys(financialData.categories);
+            const categoryValues = categories.map(cat => financialData.categories[cat]);
+            const colors = categories.map(cat => categoryColors[cat]);
+            pieChart.data.labels = categories;
+            pieChart.data.datasets[0].data = categoryValues;
+            pieChart.data.datasets[0].backgroundColor = colors;
+            pieChart.update();
+        }
+
+        // Enter key support on modern event
+        document.getElementById('expenseAmount').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { addExpense(); }
+        });
+        document.getElementById('checkAmount').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { addCheck(); }
+        });
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
+

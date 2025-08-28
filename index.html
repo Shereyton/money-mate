@@ -208,7 +208,7 @@
 
         .charts-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 30px;
             margin-top: 30px;
         }
@@ -226,6 +226,15 @@
             color: #374151;
             margin-bottom: 20px;
         }
+
+        /* Responsive form row for inputs */
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+        .form-row .input-group { margin: 0; }
 
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -269,6 +278,8 @@
             .dashboard {
                 grid-template-columns: 1fr;
             }
+            .form-row { grid-template-columns: 1fr; }
+            .form-row .btn { width: 100%; }
         }
     </style>
 </head>
@@ -320,12 +331,12 @@
 
             <div id="checkSection" style="display: none;">
                 <h3 style="margin: 25px 0 15px; color: #374151;">Add Check</h3>
-                <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end;">
-                    <div class="input-group" style="margin: 0;">
+                <div class="form-row">
+                    <div class="input-group">
                         <label for="checkNumber">Check #</label>
                         <input type="text" id="checkNumber" placeholder="12345">
                     </div>
-                    <div class="input-group" style="margin: 0;">
+                    <div class="input-group">
                         <label for="checkAmount">Amount ($)</label>
                         <input type="number" id="checkAmount" placeholder="0.00" step="0.01">
                     </div>
@@ -335,12 +346,12 @@
             </div>
 
             <h3 style="margin: 25px 0 15px; color: #374151;">Add Expense</h3>
-            <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end;">
-                <div class="input-group" style="margin: 0;">
+            <div class="form-row">
+                <div class="input-group">
                     <label for="expenseAmount">Amount ($)</label>
                     <input type="number" id="expenseAmount" placeholder="0.00" step="0.01">
                 </div>
-                <div class="input-group" style="margin: 0;">
+                <div class="input-group">
                     <label for="expenseCategory">Category</label>
                     <select id="expenseCategory">
                         <option value="Housing">🏠 Housing</option>
@@ -438,7 +449,7 @@
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value.toLocaleString();
+                                return '$' + Number(value).toLocaleString();
                             }
                         }
                     }
@@ -473,7 +484,9 @@
                             label: function(context) {
                                 const label = context.label || '';
                                 const value = '$' + context.parsed.toLocaleString();
-                                const percentage = ((context.parsed / financialData.expenses.reduce((a, b) => a + b.amount, 0)) * 100).toFixed(1);
+                                const total = financialData.expenses.reduce((a, b) => a + b.amount, 0);
+                                if (!total) return label + ': ' + value;
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
                                 return label + ': ' + value + ' (' + percentage + '%)';
                             }
                         }
@@ -654,30 +667,34 @@
             pieChart.update();
         }
 
-        // Animate value changes
+        // Animate value changes with timer dedupe and robust parsing
+        const valueTimers = {};
         function animateValue(elementId, value) {
             const element = document.getElementById(elementId);
-            const current = parseFloat(element.textContent.replace('$', '').replace(',', '')) || 0;
-            const increment = (value - current) / 20;
+            if (valueTimers[elementId]) { clearInterval(valueTimers[elementId]); }
+            const current = parseFloat((element.textContent || '').replace(/[^0-9.-]/g, '')) || 0;
+            const steps = 20;
+            const increment = (value - current) / steps;
             let step = 0;
             
-            const timer = setInterval(() => {
+            valueTimers[elementId] = setInterval(() => {
                 step++;
                 const newValue = current + (increment * step);
                 element.textContent = '$' + newValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                 
-                if (step >= 20) {
-                    clearInterval(timer);
+                if (step >= steps) {
+                    clearInterval(valueTimers[elementId]);
                     element.textContent = '$' + value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                 }
             }, 25);
         }
 
-        // Enter key support for expense input
-        document.getElementById('expenseAmount').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addExpense();
-            }
+        // Enter key support for inputs (use keydown)
+        document.getElementById('expenseAmount').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { addExpense(); }
+        });
+        document.getElementById('checkAmount').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { addCheck(); }
         });
 
         // Initialize display
