@@ -46,6 +46,11 @@
             --toast-bg: rgba(0,0,0,0.85);
             --toast-text: #fff;
             --ring-size: 120px;
+            --help-text: var(--muted);
+            --gauge-bg: var(--card-bg);
+            --gauge-wave: var(--primary);
+            --gauge-wave2: var(--accent);
+            --gauge-border: var(--border);
         }
 
         /* Sleek (experimental) theme overrides */
@@ -73,6 +78,7 @@
             --focus-ring: rgba(139, 92, 246, 0.25);
             --button-shadow: rgba(139, 92, 246, 0.50);
             --toast-bg: rgba(17,24,39,0.9);
+            --gauge-bg: rgba(255,255,255,0.06);
         }
 
         body {
@@ -243,6 +249,8 @@
         }
         .btn:hover::before { transform: scale(1); }
 
+        .help-text { color: var(--help-text); font-size: 0.85rem; margin-top: 6px; }
+
         .expense-list {
             margin-top: 20px;
             max-height: 300px;
@@ -314,6 +322,13 @@
             color: var(--text);
             margin-bottom: 20px;
         }
+        /* Fluid gauge */
+        .liquid-wrap { position: relative; display: grid; place-items: center; }
+        #balanceCanvas { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; }
+        .gauge-label { position: absolute; text-align: center; color: var(--text); font-weight: 800; pointer-events: none; }
+        .gauge-label .big { font-size: 1.6rem; letter-spacing: 0.5px; }
+        .gauge-label .small { display: block; font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+        .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 14px; }
 
         /* Responsive form row for inputs */
         .form-row {
@@ -448,6 +463,23 @@
         .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 50%; transition: .2s; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         input:checked + .slider { background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end)); border-color: transparent; }
         input:checked + .slider:before { transform: translate(20px, -50%); }
+
+        /* Mobile-friendly placement for toggles */
+        @media (max-width: 640px) {
+            .theme-toggle {
+                top: auto;
+                bottom: 12px;
+                right: 12px;
+                left: auto;
+                padding: 6px 8px;
+                gap: 6px;
+                border-radius: 999px;
+            }
+            .theme-toggle .toggle-label { display: none; }
+            .switch { width: 42px; height: 24px; }
+            .slider:before { width: 18px; height: 18px; left: 3px; }
+            input:checked + .slider:before { transform: translate(18px, -50%); }
+        }
     </style>
 </head>
 <body>
@@ -491,6 +523,10 @@
                 <div class="metric-value positive" id="disposableDisplay">$0</div>
             </div>
             <div class="card metric-card">
+                <div class="metric-label">Account Balance</div>
+                <div class="metric-value positive" id="balanceDisplay">$0</div>
+            </div>
+            <div class="card metric-card">
                 <div class="metric-label">Spend Rate</div>
                 <div class="progress-ring" id="spendRing">
                     <svg width="120" height="120">
@@ -504,6 +540,15 @@
 
         <div class="input-section">
             <h2 style="margin-bottom: 20px; color: var(--text);">Financial Input</h2>
+
+            <div class="input-group">
+                <label for="balanceInput">Current Account Balance ($)</label>
+                <div class="form-row" style="grid-template-columns: 1fr auto;">
+                    <input type="number" id="balanceInput" placeholder="0.00" step="0.01">
+                    <button class="btn" id="setBalanceBtn">Set</button>
+                </div>
+                <div class="help-text">Auto-updates when you add/delete expenses. You can edit anytime.</div>
+            </div>
 
             <div class="input-group">
                 <label for="incomeType">Income Input Type</label>
@@ -568,6 +613,20 @@
                 <h3 class="chart-title">📈 Expense Categories</h3>
                 <canvas id="pieChart"></canvas>
             </div>
+            <div class="chart-container">
+                <h3 class="chart-title">💧 Balance Gauge</h3>
+                <div class="liquid-wrap">
+                    <canvas id="balanceCanvas" width="420" height="220"></canvas>
+                    <div class="gauge-label">
+                        <span class="big" id="gaugeMain">0%</span>
+                        <span class="small" id="gaugeSub">of goal</span>
+                    </div>
+                </div>
+                <div class="goal-row">
+                    <input type="number" id="balanceGoalInput" placeholder="Set balance goal ($)" step="0.01" style="border:2px solid var(--border); background:var(--surface); color:var(--text); border-radius:10px; padding:10px 12px;">
+                    <button class="btn" id="setGoalBtn">Set Goal</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -579,7 +638,8 @@
             income: 0,
             expenses: [],
             categories: {},
-            checks: []
+            checks: [],
+            balance: 0
         };
 
         // Category colors
@@ -616,21 +676,23 @@
         const barChart = new Chart(barCtx, {
             type: 'bar',
             data: {
-                labels: ['Income', 'Expenses', 'Savings', 'Disposable'],
+                labels: ['Income', 'Expenses', 'Savings', 'Disposable', 'Balance'],
                 datasets: [{
                     label: 'Amount ($)',
-                    data: [0, 0, 0, 0],
+                    data: [0, 0, 0, 0, 0],
                     backgroundColor: [
                         hexToRgba(getCssVar('--primary') || '#667eea', 0.8),
                         hexToRgba(getCssVar('--danger') || '#ef4444', 0.8),
                         hexToRgba(getCssVar('--success') || '#10b981', 0.8),
-                        hexToRgba(getCssVar('--accent') || '#a855f7', 0.8)
+                        hexToRgba(getCssVar('--accent') || '#a855f7', 0.8),
+                        hexToRgba(getCssVar('--primary') || '#667eea', 0.5)
                     ],
                     borderColor: [
                         hexToRgba(getCssVar('--primary') || '#667eea', 1),
                         hexToRgba(getCssVar('--danger') || '#ef4444', 1),
                         hexToRgba(getCssVar('--success') || '#10b981', 1),
-                        hexToRgba(getCssVar('--accent') || '#a855f7', 1)
+                        hexToRgba(getCssVar('--accent') || '#a855f7', 1),
+                        hexToRgba(getCssVar('--primary') || '#667eea', 0.8)
                     ],
                     borderWidth: 2
                 }]
@@ -804,6 +866,13 @@
             renderFilterChips();
             showToast(`Added ${category} $${amount.toFixed(2)}`, 'success');
             if (fxEnabled) burst(ev);
+            // Auto-deduct from balance
+            financialData.balance = (parseFloat(financialData.balance) || 0) - amount;
+            localStorage.setItem('balance', String(financialData.balance));
+            const bInput = document.getElementById('balanceInput');
+            if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+            animateValue('balanceDisplay', financialData.balance);
+            updateBalanceClass();
         }
 
         // Delete expense function
@@ -820,6 +889,13 @@
                 renderExpenses();
                 renderFilterChips();
                 showToast('Expense deleted', 'warn');
+                // Auto-adjust balance back when an expense is removed
+                financialData.balance = (parseFloat(financialData.balance) || 0) + expense.amount;
+                localStorage.setItem('balance', String(financialData.balance));
+                const bInput = document.getElementById('balanceInput');
+                if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+                animateValue('balanceDisplay', financialData.balance);
+                updateBalanceClass();
             }
         }
 
@@ -874,13 +950,17 @@
             animateValue('expensesDisplay', totalExpenses);
             animateValue('savingsDisplay', savings);
             animateValue('disposableDisplay', disposable);
+            if (typeof financialData.balance === 'number') {
+                animateValue('balanceDisplay', financialData.balance);
+            }
             
             // Update bar chart
             barChart.data.datasets[0].data = [
                 financialData.income,
                 totalExpenses,
                 savings,
-                disposable
+                disposable,
+                financialData.balance || 0
             ];
             barChart.update();
             
@@ -899,6 +979,7 @@
             updateRing(percent);
 
             popMetrics();
+            updateBalanceClass();
         }
 
         // Animate value changes with timer dedupe and robust parsing
@@ -943,13 +1024,15 @@
                     hexToRgba(primary, 0.8),
                     hexToRgba(danger, 0.8),
                     hexToRgba(success, 0.8),
-                    hexToRgba(accent, 0.8)
+                    hexToRgba(accent, 0.8),
+                    hexToRgba(primary, 0.5)
                 ];
                 const border = [
                     hexToRgba(primary, 1),
                     hexToRgba(danger, 1),
                     hexToRgba(success, 1),
-                    hexToRgba(accent, 1)
+                    hexToRgba(accent, 1),
+                    hexToRgba(primary, 0.8)
                 ];
                 barChart.data.datasets[0].backgroundColor = bg;
                 barChart.data.datasets[0].borderColor = border;
@@ -957,6 +1040,13 @@
 
                 // Update global text color for axes/legend/tooltips
                 Chart.defaults.color = textColor;
+                // Update gauge theme colors
+                if (typeof gaugeColors !== 'undefined') {
+                    gaugeColors.primary = primary;
+                    gaugeColors.accent = accent;
+                    gaugeColors.danger = danger;
+                    gaugeColors.surface = getCssVar('--gauge-bg') || '#ffffff';
+                }
             } catch (e) { /* no-op */ }
         }
 
@@ -1084,7 +1174,7 @@
         // Pop metric values on update
         function popMetrics() {
             if (!fxEnabled) return;
-            ['incomeDisplay','yearlyDisplay','expensesDisplay','savingsDisplay','disposableDisplay'].forEach(id => {
+            ['incomeDisplay','yearlyDisplay','expensesDisplay','savingsDisplay','disposableDisplay','balanceDisplay'].forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.classList.remove('pop');
@@ -1106,6 +1196,139 @@
 
         // Initialize display
         renderFilterChips();
+        // Load balance from localStorage
+        const savedBalance = localStorage.getItem('balance');
+        if (savedBalance !== null) {
+            financialData.balance = parseFloat(savedBalance) || 0;
+            const bInputInit = document.getElementById('balanceInput');
+            if (bInputInit) bInputInit.value = String(financialData.balance.toFixed(2));
+            animateValue('balanceDisplay', financialData.balance);
+        }
+        // Balance input handlers
+        const setBalanceBtn = document.getElementById('setBalanceBtn');
+        const balanceInput = document.getElementById('balanceInput');
+        function updateBalanceClass() {
+            const el = document.getElementById('balanceDisplay');
+            if (!el) return;
+            el.classList.remove('positive','negative','neutral');
+            const val = parseFloat(financialData.balance) || 0;
+            el.classList.add(val >= 0 ? 'positive' : 'negative');
+        }
+        function setBalanceFromInput() {
+            const val = parseFloat(balanceInput.value);
+            if (isNaN(val)) return;
+            financialData.balance = val;
+            localStorage.setItem('balance', String(val));
+            animateValue('balanceDisplay', val);
+            updateBalanceClass();
+            showToast('Balance updated', 'info');
+            refreshGauge();
+        }
+        if (setBalanceBtn) setBalanceBtn.addEventListener('click', setBalanceFromInput);
+        if (balanceInput) balanceInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setBalanceFromInput(); });
+        updateBalanceClass();
+        // Gauge setup
+        const gaugeCanvas = document.getElementById('balanceCanvas');
+        const gaugeCtx = gaugeCanvas.getContext('2d');
+        let phase = 0;
+        const gaugeColors = {
+            primary: getCssVar('--primary') || '#667eea',
+            accent: getCssVar('--accent') || '#a855f7',
+            danger: getCssVar('--danger') || '#ef4444',
+            surface: getCssVar('--gauge-bg') || '#ffffff'
+        };
+        function getGoalDefault() {
+            const base = financialData.income || 1000;
+            return Math.max(100, Math.round(base));
+        }
+        let balanceGoal = parseFloat(localStorage.getItem('balanceGoal') || '');
+        if (isNaN(balanceGoal) || balanceGoal <= 0) balanceGoal = getGoalDefault();
+        const balanceGoalInput = document.getElementById('balanceGoalInput');
+        const setGoalBtn = document.getElementById('setGoalBtn');
+        if (balanceGoalInput) balanceGoalInput.value = String(balanceGoal.toFixed(2));
+        if (setGoalBtn) setGoalBtn.addEventListener('click', () => {
+            const v = parseFloat(balanceGoalInput.value);
+            if (!isNaN(v) && v > 0) {
+                balanceGoal = v;
+                localStorage.setItem('balanceGoal', String(v));
+                showToast('Goal updated', 'success');
+                refreshGauge();
+            }
+        });
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x+r, y);
+            ctx.arcTo(x+w, y, x+w, y+h, r);
+            ctx.arcTo(x+w, y+h, x, y+h, r);
+            ctx.arcTo(x, y+h, x, y, r);
+            ctx.arcTo(x, y, x+w, y, r);
+            ctx.closePath();
+        }
+        function drawGauge(percent) {
+            const dpr = window.devicePixelRatio || 1;
+            const W = gaugeCanvas.clientWidth * dpr;
+            const H = gaugeCanvas.clientHeight * dpr;
+            if (Math.abs(W - gaugeCanvas.width) > 1 || Math.abs(H - gaugeCanvas.height) > 1) {
+                gaugeCanvas.width = W; gaugeCanvas.height = H;
+            }
+            const ctx = gaugeCtx;
+            ctx.clearRect(0,0,W,H);
+            const pad = 16 * dpr;
+            const radius = 22 * dpr;
+            // Border and background
+            drawRoundedRect(ctx, pad, pad, W-2*pad, H-2*pad, radius);
+            ctx.fillStyle = gaugeColors.surface;
+            ctx.fill();
+            ctx.lineWidth = 2*dpr;
+            ctx.strokeStyle = getCssVar('--gauge-border') || '#e5e7eb';
+            ctx.stroke();
+            // Clip region for liquid
+            ctx.save();
+            drawRoundedRect(ctx, pad, pad, W-2*pad, H-2*pad, radius);
+            ctx.clip();
+            const level = pad + (H-2*pad) * (1 - percent/100);
+            const amp = (fxEnabled ? 8 : 5) * dpr;
+            const k = 2 * Math.PI / (80 * dpr);
+            // Back wave
+            ctx.beginPath();
+            ctx.moveTo(0, H);
+            for (let x=0; x<=W; x+=2*dpr) {
+                const y = level + Math.sin((x + phase*0.8) * k) * amp * 0.8;
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(W, H); ctx.closePath();
+            ctx.fillStyle = hexToRgba(gaugeColors.accent, 0.5);
+            ctx.fill();
+            // Front wave
+            ctx.beginPath();
+            ctx.moveTo(0, H);
+            for (let x=0; x<=W; x+=2*dpr) {
+                const y = level + Math.sin((x + phase) * k) * amp;
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(W, H); ctx.closePath();
+            const posColor = hexToRgba(gaugeColors.primary, 0.9);
+            const negColor = hexToRgba(gaugeColors.danger, 0.9);
+            ctx.fillStyle = (financialData.balance >= 0) ? posColor : negColor;
+            ctx.fill();
+            ctx.restore();
+            // Center labels (DOM overlay)
+            const main = document.getElementById('gaugeMain');
+            const sub = document.getElementById('gaugeSub');
+            if (main && sub) {
+                main.textContent = `${Math.round(percent)}%`;
+                sub.textContent = `of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`;
+            }
+        }
+        function computePercent() {
+            const goal = balanceGoal || getGoalDefault();
+            if (!goal || goal <= 0) return 0;
+            const pct = (financialData.balance / goal) * 100;
+            return Math.max(0, Math.min(100, pct));
+        }
+        function refreshGauge() { drawGauge(computePercent()); }
+        function tick() { phase += 0.8; refreshGauge(); requestAnimationFrame(tick); }
+        tick();
         updateDisplay();
     </script>
 </body>
