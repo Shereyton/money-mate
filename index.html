@@ -328,8 +328,10 @@
         /* Fluid gauge */
         .liquid-wrap { position: relative; display: grid; place-items: center; }
         #balanceCanvas { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; }
-        /* Canvas now renders labels; hide DOM fallback */
-        .gauge-label { display: none; }
+        /* Gauge label (DOM overlay above canvas) */
+        .gauge-label { position: absolute; left: 0; right: 0; top: var(--gauge-center-top, 50%); transform: translateY(-50%); text-align: center; color: var(--text); font-weight: 800; pointer-events: none; z-index: 2; }
+        .gauge-label .big { font-size: 1.6rem; letter-spacing: 0.5px; line-height: 1.1; }
+        .gauge-label .small { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); font-weight: 600; line-height: 1; }
         .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 14px; }
 
         /* Responsive form row for inputs */
@@ -1338,10 +1340,6 @@
             ctx.arcTo(x, y, x+w, y, r);
             ctx.closePath();
         }
-        // Offscreen canvases reused for gauge text composition
-        const textCanvasAbove = document.createElement('canvas');
-        const textCanvasUnder = document.createElement('canvas');
-
         function drawGauge(percent) {
             const dpr = window.devicePixelRatio || 1;
             const W = gaugeCanvas.clientWidth * dpr;
@@ -1390,69 +1388,30 @@
             ctx.fillStyle = (financialData.balance >= 0) ? posColor : negColor;
             ctx.fill();
             ctx.restore();
-
-            // Draw labels integrated with wave via offscreen composition
-            const centerX = W/2;
-            const centerY = H/2;
-            const bigSize = Math.min(H * 0.18, 28 * dpr);
-            const smallSize = Math.min(H * 0.095, 13 * dpr);
-            const textColor = getCssVar('--text') || '#e5e7eb';
-            const subColor = getCssVar('--muted') || '#94a3b8';
-            const waterBase = (financialData.balance >= 0) ? (gaugeColors.primary || '#8b5cf6') : (gaugeColors.danger || '#ef4444');
-            const waterText = hexToRgba(waterBase, 0.95);
-
-            // Prepare offscreens
-            [textCanvasAbove, textCanvasUnder].forEach(c => { if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }});
-            const aCtx = textCanvasAbove.getContext('2d');
-            const uCtx = textCanvasUnder.getContext('2d');
-            aCtx.clearRect(0,0,W,H); uCtx.clearRect(0,0,W,H);
-
-            // Helper to build water path on any ctx
-            function buildWaterPathOn(c) {
-                c.beginPath();
-                c.moveTo(0, H);
-                for (let x=0; x<=W; x+=2*dpr) {
-                    const y = level + Math.sin((x + phase) * k) * amp;
-                    c.lineTo(x, y);
+            // Update DOM overlay labels (consistent on mobile + desktop)
+            const main = document.getElementById('gaugeMain');
+            const sub = document.getElementById('gaugeSub');
+            if (main && sub) {
+                main.textContent = `${Math.round(percent)}%`;
+                sub.textContent = `of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`;
+                // Position the label group so its bottom edge stays above the crest at center
+                const centerX = W/2;
+                const crestY = (pad + (H-2*pad) * (1 - percent/100) + Math.sin((centerX + phase) * k) * amp) / dpr; // px
+                const defaultCenter = (H/2)/dpr; // px
+                const margin = 16; // px
+                const minCenter = pad/dpr + margin;
+                const maxCenter = (H - pad)/dpr - margin;
+                const label = document.querySelector('.gauge-label');
+                if (label) {
+                    const rect = label.getBoundingClientRect();
+                    const labelHeight = rect.height || 32; // fallback
+                    // ensure bottom (center + height/2) <= crestY - margin
+                    let allowedCenter = crestY - margin - (labelHeight/2);
+                    let newCenter = Math.min(defaultCenter, allowedCenter);
+                    newCenter = Math.max(minCenter, Math.min(newCenter, maxCenter));
+                    label.style.setProperty('--gauge-center-top', `${newCenter}px`);
                 }
-                c.lineTo(W, H); c.closePath();
             }
-
-            // Above-water: textColor, then cut away underwater region
-            aCtx.save();
-            aCtx.beginPath();
-            drawRoundedRect(aCtx, pad, pad, W-2*pad, H-2*pad, radius);
-            aCtx.clip();
-            aCtx.textAlign = 'center'; aCtx.textBaseline = 'middle';
-            aCtx.font = `700 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            aCtx.fillStyle = textColor;
-            aCtx.fillText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
-            aCtx.font = `600 ${smallSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            aCtx.fillStyle = subColor;
-            aCtx.fillText(`of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, centerX, centerY + 14*dpr);
-            aCtx.globalCompositeOperation = 'destination-out';
-            buildWaterPathOn(aCtx); aCtx.fill();
-            aCtx.restore(); aCtx.globalCompositeOperation = 'source-over';
-
-            // Underwater: water-tinted text, keep only intersection with water
-            uCtx.save();
-            uCtx.beginPath();
-            drawRoundedRect(uCtx, pad, pad, W-2*pad, H-2*pad, radius);
-            uCtx.clip();
-            uCtx.textAlign = 'center'; uCtx.textBaseline = 'middle';
-            uCtx.font = `700 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            uCtx.fillStyle = waterText;
-            uCtx.fillText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
-            uCtx.font = `600 ${smallSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            uCtx.fillStyle = hexToRgba(waterBase, 0.8);
-            uCtx.fillText(`of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, centerX, centerY + 14*dpr);
-            uCtx.globalCompositeOperation = 'destination-in';
-            buildWaterPathOn(uCtx); uCtx.fill();
-            uCtx.restore(); uCtx.globalCompositeOperation = 'source-over';
-
-            // Composite onto main
-            ctx.drawImage(textCanvasAbove, 0, 0);
-            ctx.drawImage(textCanvasUnder, 0, 0);
         }
         function computePercent() {
             const goal = balanceGoal || getGoalDefault();
