@@ -770,6 +770,32 @@
             balance: 0
         };
 
+        function saveData() {
+            try {
+                localStorage.setItem('financialData', JSON.stringify(financialData));
+                localStorage.setItem('balance', String(financialData.balance));
+            } catch (e) {
+                console.error('Failed to save data', e);
+            }
+        }
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('financialData');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    Object.assign(financialData, parsed);
+                } else {
+                    const savedBalance = localStorage.getItem('balance');
+                    if (savedBalance !== null) {
+                        financialData.balance = parseFloat(savedBalance) || 0;
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load data', e);
+            }
+        }
+
         // Category colors
         const categoryColors = {
             'Housing': '#ef4444',
@@ -891,6 +917,7 @@
         document.getElementById('income').addEventListener('input', function(e) {
             financialData.income = parseFloat(e.target.value) || 0;
             updateDisplay();
+            saveData();
         });
 
         document.getElementById('incomeType').addEventListener('change', function(e) {
@@ -899,6 +926,7 @@
                 document.getElementById('checkSection').style.display = 'none';
                 financialData.income = parseFloat(document.getElementById('income').value) || 0;
                 updateDisplay();
+                saveData();
             } else {
                 document.getElementById('monthlySection').style.display = 'none';
                 document.getElementById('checkSection').style.display = 'block';
@@ -956,6 +984,7 @@
         function updateIncomeFromChecks() {
             financialData.income = financialData.checks.reduce((sum, c) => sum + c.amount, 0);
             updateDisplay();
+            saveData();
         }
 
         // Add expense function
@@ -996,11 +1025,11 @@
             burst(ev);
             // Auto-deduct from balance
             financialData.balance = (parseFloat(financialData.balance) || 0) - amount;
-            localStorage.setItem('balance', String(financialData.balance));
             const bInput = document.getElementById('balanceInput');
             if (bInput) bInput.value = String(financialData.balance.toFixed(2));
             animateValue('balanceDisplay', financialData.balance);
             updateBalanceClass();
+            saveData();
         }
 
         // Delete expense function
@@ -1019,11 +1048,11 @@
                 showToast('Expense deleted', 'warn');
                 // Auto-adjust balance back when an expense is removed
                 financialData.balance = (parseFloat(financialData.balance) || 0) + expense.amount;
-                localStorage.setItem('balance', String(financialData.balance));
                 const bInput = document.getElementById('balanceInput');
                 if (bInput) bInput.value = String(financialData.balance.toFixed(2));
                 animateValue('balanceDisplay', financialData.balance);
                 updateBalanceClass();
+                saveData();
             }
         }
 
@@ -1371,15 +1400,19 @@
         // Attach interactivity
         attachTilt();
 
-        // Initialize display
+        // Load saved data and render initial UI
+        loadData();
+        renderChecks();
+        renderExpenses();
         renderFilterChips();
-        // Load balance from localStorage
-        const savedBalance = localStorage.getItem('balance');
-        if (savedBalance !== null) {
-            financialData.balance = parseFloat(savedBalance) || 0;
-            const bInputInit = document.getElementById('balanceInput');
-            if (bInputInit) bInputInit.value = String(financialData.balance.toFixed(2));
-            animateValue('balanceDisplay', financialData.balance);
+        const bInputInit = document.getElementById('balanceInput');
+        if (bInputInit) bInputInit.value = String(financialData.balance.toFixed(2));
+        const incomeInputInit = document.getElementById('income');
+        if (incomeInputInit) incomeInputInit.value = String(financialData.income.toFixed(2));
+        if (financialData.checks.length > 0) {
+            document.getElementById('incomeType').value = 'checks';
+            document.getElementById('monthlySection').style.display = 'none';
+            document.getElementById('checkSection').style.display = 'block';
         }
         // Balance input handlers
         const setBalanceBtn = document.getElementById('setBalanceBtn');
@@ -1395,11 +1428,11 @@
             const val = parseFloat(balanceInput.value);
             if (isNaN(val)) return;
             financialData.balance = val;
-            localStorage.setItem('balance', String(val));
             animateValue('balanceDisplay', val);
             updateBalanceClass();
             showToast('Balance updated', 'info');
             refreshGauge();
+            saveData();
         }
         if (setBalanceBtn) setBalanceBtn.addEventListener('click', setBalanceFromInput);
         if (balanceInput) balanceInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setBalanceFromInput(); });
