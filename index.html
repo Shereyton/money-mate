@@ -197,6 +197,19 @@
             will-change: background-position;
         }
 
+        /* Classic (non-sleek): tweak shimmer to blend with lighter cards */
+        body:not(.theme-sleek) .metric-card::before {
+            background: linear-gradient(
+                90deg,
+                transparent,
+                color-mix(in srgb, var(--primary) 45%, transparent),
+                color-mix(in srgb, var(--accent) 45%, transparent),
+                transparent
+            );
+            background-size: 220% 100%;
+            filter: saturate(0.95) brightness(1.06);
+        }
+
         .metric-value {
             font-size: 2.5rem;
             font-weight: bold;
