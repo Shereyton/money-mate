@@ -203,36 +203,13 @@
             will-change: background-position;
         }
 
-        /* Classic (non-sleek): layered shimmer = soft track + animated runner */
+        /* Classic (non-sleek): use the same sleek-style shimmer but with a bolder palette */
         body:not(.theme-sleek) .metric-card::before {
-            height: 2px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0)); /* subtle track shadow */
-            animation: none; /* static track */
-        }
-        body:not(.theme-sleek) .metric-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -30%;
-            width: 40%;
-            height: 4px; /* a touch thicker for visibility */
-            border-radius: 999px;
-            /* High-contrast classic runner: warm→cool with subtle glow */
-            background: linear-gradient(90deg, rgba(0,0,0,0), #f97316 25%, #3b82f6 75%, rgba(0,0,0,0));
-            opacity: 1;
-            filter: saturate(1.12) contrast(1.06);
-            box-shadow: 0 0 6px rgba(249, 115, 22, 0.25), 0 0 8px rgba(59, 130, 246, 0.22);
-            mix-blend-mode: normal;
-            animation: classicShimmer 2.0s linear infinite;
-            will-change: transform, opacity, background;
-        }
-        @keyframes classicShimmer {
-            0%   { transform: translateX(0);    opacity: .85; }
-            50%  { transform: translateX(180%); opacity: 1; }
-            100% { transform: translateX(360%); opacity: .85; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            body:not(.theme-sleek) .metric-card::after { animation: none; opacity: .9; transform: translateX(240%); }
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #ff7a18, #3a7bd5, transparent);
+            background-size: 320% 100%;
+            animation: shimmer 1.8s linear infinite; /* same animation style, faster for pop */
+            filter: saturate(1.15) contrast(1.12);
         }
 
         .metric-value {
