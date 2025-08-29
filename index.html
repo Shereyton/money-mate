@@ -392,6 +392,17 @@
             color: #ffffff;
             text-shadow: 0 1px 2px rgba(0,0,0,0.35);
         }
+
+        /* Sleek Mode: ensure strong contrast over vibrant waves */
+        body.theme-sleek .gauge-label .big {
+            color: #f8fafc; /* near-white for dark background */
+            -webkit-text-stroke: 0.6px rgba(0,0,0,0.45); /* thin dark edge for bright wave overlap */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.55), 0 0 6px rgba(0,0,0,0.25);
+        }
+        body.theme-sleek .gauge-label .small {
+            color: #e2e8f0; /* light gray */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
         .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 14px; }
 
         /* Responsive form row for inputs */
