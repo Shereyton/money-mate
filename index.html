@@ -329,9 +329,9 @@
         .liquid-wrap { position: relative; display: grid; place-items: center; }
         #balanceCanvas { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; }
         /* Gauge label (DOM overlay above canvas) */
-        .gauge-label { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--text); font-weight: 800; pointer-events: none; z-index: 2; }
-        .gauge-label .big { font-size: 1.6rem; letter-spacing: 0.5px; }
-        .gauge-label .small { position: absolute; left: 50%; transform: translateX(-50%); top: var(--gauge-sub-top, calc(50% + 14px)); font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+        .gauge-label { position: absolute; left: 0; right: 0; top: var(--gauge-center-top, 50%); transform: translateY(-50%); text-align: center; color: var(--text); font-weight: 800; pointer-events: none; z-index: 2; }
+        .gauge-label .big { font-size: 1.6rem; letter-spacing: 0.5px; line-height: 1.1; }
+        .gauge-label .small { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); font-weight: 600; line-height: 1; }
         .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 14px; }
 
         /* Responsive form row for inputs */
@@ -1394,16 +1394,17 @@
             if (main && sub) {
                 main.textContent = `${Math.round(percent)}%`;
                 sub.textContent = `of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`;
-                // Keep sub-label above the wave crest at center to avoid overlap
+                // Position the whole label group so it never overlaps the wave crest at center
                 const centerX = W/2;
                 const crestY = (pad + (H-2*pad) * (1 - percent/100) + Math.sin((centerX + phase) * k) * amp) / dpr;
-                const defaultTop = (H/2)/dpr + 14;
-                const margin = 10;
-                const minTop = pad/dpr + 12;
-                const maxTop = (H - pad)/dpr - 12;
-                let newTop = Math.min(defaultTop, crestY - margin);
-                newTop = Math.max(minTop, Math.min(newTop, maxTop));
-                sub.style.setProperty('--gauge-sub-top', `${newTop}px`);
+                const defaultCenter = (H/2)/dpr;
+                const margin = 18; // keep label block above crest comfortably
+                const minCenter = pad/dpr + margin;
+                const maxCenter = (H - pad)/dpr - margin;
+                let newCenter = Math.min(defaultCenter, crestY - margin);
+                newCenter = Math.max(minCenter, Math.min(newCenter, maxCenter));
+                const label = document.querySelector('.gauge-label');
+                if (label) label.style.setProperty('--gauge-center-top', `${newCenter}px`);
             }
         }
         function computePercent() {
