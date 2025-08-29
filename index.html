@@ -457,7 +457,30 @@
             z-index: 1000;
         }
         .theme-toggle .toggle-label { font-weight: 600; font-size: 0.9rem; }
-        .theme-toggle .toggle-icon { font-size: 1rem; line-height: 1; opacity: .9; margin: 0 6px 0 2px; }
+        .theme-toggle .toggle-icon { font-size: 1rem; line-height: 1; opacity: .95; margin: 0 6px 0 2px; position: relative; display: inline-block; }
+        .theme-toggle .toggle-icon.moon { filter: drop-shadow(0 0 0 rgba(139,92,246,0)); }
+        .theme-toggle .toggle-icon.sparkles { filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+
+        /* Toggle icon animations */
+        @keyframes moonGlow {
+            0% { transform: scale(1); text-shadow: 0 0 0 rgba(139,92,246,0); }
+            35% { transform: scale(1.15); text-shadow: 0 0 10px rgba(139,92,246,0.8), 0 0 20px rgba(6,182,212,0.6); }
+            70% { transform: scale(1.05); text-shadow: 0 0 6px rgba(139,92,246,0.6); }
+            100% { transform: scale(1); text-shadow: 0 0 0 rgba(139,92,246,0); }
+        }
+        .glow-pulse { animation: moonGlow 900ms ease-out; }
+        .toggle-icon.moon.glow-pulse::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; background: radial-gradient(circle, rgba(139,92,246,0.35), rgba(6,182,212,0.0) 60%); animation: halo 900ms ease-out; pointer-events: none; }
+        @keyframes halo { 0% { opacity: 0; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.15); } 100% { opacity: 0; transform: scale(1.25); } }
+
+        @keyframes sparkleBurst {
+            0% { transform: scale(0.9) rotate(0); filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+            30% { transform: scale(1.15) rotate(10deg); filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); }
+            60% { transform: scale(1) rotate(-8deg); }
+            100% { transform: scale(1) rotate(0); filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+        }
+        .sparkle-burst { animation: sparkleBurst 800ms ease-out; }
+        .toggle-icon.sparkles.sparkle-burst::after { content: "✨✨✨"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.6); opacity: 0; animation: sparkleTrail 700ms ease-out; pointer-events: none; }
+        @keyframes sparkleTrail { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -90%) scale(1.1); } }
         .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface); border: 1px solid var(--border); transition: .2s; border-radius: 999px; }
@@ -492,13 +515,13 @@
 </head>
 <body>
     <div class="theme-toggle" title="Quick settings">
-        <span class="toggle-icon" aria-hidden="true" title="Sleek Mode">🌙</span>
+        <span class="toggle-icon moon" aria-hidden="true" title="Sleek Mode">🌙</span>
         <label class="switch" title="Sleek Mode: modern dark glass UI (visual only)">
             <input type="checkbox" id="themeToggle" aria-label="Toggle Sleek Mode (modern dark look)">
             <span class="slider"></span>
         </label>
         <span class="toggle-label">Sleek Mode</span>
-        <span class="toggle-icon" aria-hidden="true" title="FX Mode" style="margin-left:10px;">✨</span>
+        <span class="toggle-icon sparkles" aria-hidden="true" title="FX Mode" style="margin-left:10px;">✨</span>
         <label class="switch" title="FX Mode: extra animations and motion (visual only)">
             <input type="checkbox" id="fxToggle" aria-label="Toggle FX Mode (extra animations)">
             <span class="slider"></span>
@@ -1082,6 +1105,15 @@
                 updateChartsForTheme();
                 const msg = enabled ? 'Sleek Mode ON: modern dark glass look (visual only)' : 'Sleek Mode OFF: classic light look';
                 try { showToast(msg, 'info'); } catch (e) { /* no-op */ }
+                try {
+                    const moon = document.querySelector('.toggle-icon.moon');
+                    if (moon) {
+                        moon.classList.remove('glow-pulse');
+                        void moon.offsetWidth; // restart animation
+                        moon.classList.add('glow-pulse');
+                        setTimeout(() => moon.classList.remove('glow-pulse'), 1000);
+                    }
+                } catch (e) { /* no-op */ }
             });
         }
 
@@ -1094,6 +1126,15 @@
                 localStorage.setItem('fx', fxEnabled ? 'on' : 'off');
                 const msg = fxEnabled ? 'FX Mode ON: extra animations and motion (visual only)' : 'FX Mode OFF: reduced motion';
                 try { showToast(msg, 'info'); } catch (e) { /* no-op */ }
+                try {
+                    const spark = document.querySelector('.toggle-icon.sparkles');
+                    if (spark) {
+                        spark.classList.remove('sparkle-burst');
+                        void spark.offsetWidth; // restart animation
+                        spark.classList.add('sparkle-burst');
+                        setTimeout(() => spark.classList.remove('sparkle-burst'), 900);
+                    }
+                } catch (e) { /* no-op */ }
             });
         }
 
