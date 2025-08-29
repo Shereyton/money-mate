@@ -329,9 +329,13 @@
         .liquid-wrap { position: relative; display: grid; place-items: center; }
         #balanceCanvas { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; }
         /* Gauge label (DOM overlay above canvas) */
-        .gauge-label { position: absolute; left: 0; right: 0; top: var(--gauge-center-top, 50%); transform: translateY(-50%); text-align: center; color: var(--text); font-weight: 800; pointer-events: none; z-index: 2; }
-        .gauge-label .big { font-size: 1.6rem; letter-spacing: 0.5px; line-height: 1.1; }
+        .gauge-label { position: absolute; left: 0; right: 0; top: var(--gauge-center-top, 50%); transform: translateY(-50%); text-align: center; color: var(--text); pointer-events: none; z-index: 2; display: grid; place-items: center; }
+        .gauge-label .content { display: inline-flex; flex-direction: column; align-items: center; border-radius: 12px; }
+        .gauge-label .big { font-size: 1.6rem; font-weight: 800; letter-spacing: 0.5px; line-height: 1.1; }
         .gauge-label .small { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); font-weight: 600; line-height: 1; }
+        .gauge-label.compact .content { padding: 6px 10px; background: rgba(0,0,0,0.35); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.12); }
+        .gauge-label.compact .big { font-size: 1.3rem; }
+        .gauge-label.compact .small { font-size: 0.8rem; }
         .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 14px; }
 
         /* Responsive form row for inputs */
@@ -653,8 +657,10 @@
                 <div class="liquid-wrap">
                     <canvas id="balanceCanvas" width="420" height="220"></canvas>
                     <div class="gauge-label">
-                        <span class="big" id="gaugeMain">0%</span>
-                        <span class="small" id="gaugeSub">of goal</span>
+                        <div class="content">
+                            <span class="big" id="gaugeMain">0%</span>
+                            <span class="small" id="gaugeSub">of goal</span>
+                        </div>
                     </div>
                 </div>
                 <div class="goal-row">
@@ -1403,13 +1409,24 @@
                 const maxCenter = (H - pad)/dpr - margin;
                 const label = document.querySelector('.gauge-label');
                 if (label) {
-                    const rect = label.getBoundingClientRect();
+                    const content = label.querySelector('.content') || label;
+                    const rect = content.getBoundingClientRect();
                     const labelHeight = rect.height || 32; // fallback
                     // ensure bottom (center + height/2) <= crestY - margin
                     let allowedCenter = crestY - margin - (labelHeight/2);
                     let newCenter = Math.min(defaultCenter, allowedCenter);
                     newCenter = Math.max(minCenter, Math.min(newCenter, maxCenter));
-                    label.style.setProperty('--gauge-center-top', `${newCenter}px`);
+                    // Toggle compact mode if space above crest is tight
+                    const spaceAbove = crestY - (pad/dpr);
+                    const needCompact = (spaceAbove - labelHeight) < (margin + 6);
+                    label.classList.toggle('compact', needCompact);
+                    if (needCompact) {
+                        // pin closer to top with padding for chip
+                        const compactCenter = Math.max(minCenter, (pad/dpr) + (labelHeight/2) + 6);
+                        label.style.setProperty('--gauge-center-top', `${compactCenter}px`);
+                    } else {
+                        label.style.setProperty('--gauge-center-top', `${newCenter}px`);
+                    }
                 }
             }
         }
