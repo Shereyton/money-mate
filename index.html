@@ -492,9 +492,7 @@
         input:checked + .slider:before { transform: translate(20px, -50%); }
         @keyframes sheen { 0% { opacity: 0; transform: translateX(-30%); } 30% { opacity: .8; } 100% { opacity: 0; transform: translateX(130%); } }
 
-        /* Toggle quick explanations (desktop) */
-        .toggle-helptext { position: absolute; right: 0; top: calc(100% + 8px); display: flex; gap: 8px; align-items: center; background: var(--card-bg); border: 1px solid var(--border); padding: 6px 8px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); color: var(--muted); font-size: 0.8rem; }
-        .toggle-helptext .help-item { white-space: nowrap; }
+        /* (Removed) desktop toggle help bubble to keep UI minimal */
 
         /* Mobile-friendly placement for toggles */
         @media (max-width: 640px) {
@@ -515,7 +513,7 @@
             .switch { width: 42px; height: 24px; }
             .slider:before { width: 18px; height: 18px; left: 3px; }
             input:checked + .slider:before { transform: translate(18px, -50%); }
-            .toggle-helptext { display: none; }
+            /* help bubble removed */
         }
     </style>
 </head>
@@ -527,9 +525,6 @@
             <span class="slider"></span>
         </label>
         <span class="toggle-label">Sleek Mode</span>
-        <div class="toggle-helptext" aria-hidden="true">
-            <span class="help-item">Sleek: modern dark look</span>
-        </div>
     </div>
     <div class="container">
         <div class="header">
@@ -1137,38 +1132,19 @@
             } catch {}
         }
 
-        // Toasts for toggles: explain once per session to avoid noise
-        function showOnce(key, message) {
-            try {
-                if (localStorage.getItem(key) === '1') return;
-                localStorage.setItem(key, '1');
-                showToast(message, 'info');
-            } catch (e) { showToast(message, 'info'); }
-        }
-
         if (themeToggle) {
             themeToggle.addEventListener('change', () => {
                 const enabled = themeToggle.checked;
                 document.body.classList.toggle('theme-sleek', enabled);
                 localStorage.setItem('theme', enabled ? 'sleek' : 'classic');
                 updateChartsForTheme();
-                const msg = enabled ? 'Sleek Mode ON: modern dark glass look (visual only)' : 'Sleek Mode OFF: classic light look';
-                showOnce('sleek_help_once', 'Sleek: modern dark look (visual only)');
                 playMoonFx();
                 burstAroundMoon();
             });
         }
         // FX always ON (no toggle)
 
-        // Mobile clarity hint (first visit)
-        try {
-            const isMobileView = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
-            const hintShown = localStorage.getItem('toggle_help_shown') === '1';
-            if (isMobileView && !hintShown) {
-                showToast('Tip: 🌙 Sleek = dark look. FX is always on.', 'info');
-                localStorage.setItem('toggle_help_shown', '1');
-            }
-        } catch (e) { /* no-op */ }
+        // Toggle prompts removed for a cleaner experience
 
         // Interactive: ripple on buttons
         document.addEventListener('click', function(e) {
