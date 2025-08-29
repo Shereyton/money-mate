@@ -1338,6 +1338,10 @@
             ctx.arcTo(x, y, x+w, y, r);
             ctx.closePath();
         }
+        // Offscreen canvases reused for gauge text composition
+        const textCanvasAbove = document.createElement('canvas');
+        const textCanvasUnder = document.createElement('canvas');
+
         function drawGauge(percent) {
             const dpr = window.devicePixelRatio || 1;
             const W = gaugeCanvas.clientWidth * dpr;
@@ -1387,7 +1391,7 @@
             ctx.fill();
             ctx.restore();
 
-            // Draw labels integrated with wave (two layers: above-water and submerged)
+            // Draw labels integrated with wave via offscreen composition
             const centerX = W/2;
             const centerY = H/2;
             const bigSize = Math.min(H * 0.18, 28 * dpr);
@@ -1397,49 +1401,58 @@
             const waterBase = (financialData.balance >= 0) ? (gaugeColors.primary || '#8b5cf6') : (gaugeColors.danger || '#ef4444');
             const waterText = hexToRgba(waterBase, 0.95);
 
-            function buildWaterPath() {
-                ctx.beginPath();
-                ctx.moveTo(0, H);
+            // Prepare offscreens
+            [textCanvasAbove, textCanvasUnder].forEach(c => { if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }});
+            const aCtx = textCanvasAbove.getContext('2d');
+            const uCtx = textCanvasUnder.getContext('2d');
+            aCtx.clearRect(0,0,W,H); uCtx.clearRect(0,0,W,H);
+
+            // Helper to build water path on any ctx
+            function buildWaterPathOn(c) {
+                c.beginPath();
+                c.moveTo(0, H);
                 for (let x=0; x<=W; x+=2*dpr) {
                     const y = level + Math.sin((x + phase) * k) * amp;
-                    ctx.lineTo(x, y);
+                    c.lineTo(x, y);
                 }
-                ctx.lineTo(W, H);
-                ctx.closePath();
+                c.lineTo(W, H); c.closePath();
             }
 
-            // Above-water text (clip = rounded-rect minus water path via evenodd)
-            ctx.save();
-            ctx.beginPath();
-            drawRoundedRect(ctx, pad, pad, W-2*pad, H-2*pad, radius);
-            buildWaterPath();
-            ctx.clip('evenodd');
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font = `700 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            ctx.fillStyle = textColor;
-            ctx.fillText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
-            ctx.font = `600 ${smallSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            ctx.fillStyle = subColor;
-            ctx.fillText(`of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, centerX, centerY + 14*dpr);
-            ctx.restore();
+            // Above-water: textColor, then cut away underwater region
+            aCtx.save();
+            aCtx.beginPath();
+            drawRoundedRect(aCtx, pad, pad, W-2*pad, H-2*pad, radius);
+            aCtx.clip();
+            aCtx.textAlign = 'center'; aCtx.textBaseline = 'middle';
+            aCtx.font = `700 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+            aCtx.fillStyle = textColor;
+            aCtx.fillText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
+            aCtx.font = `600 ${smallSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+            aCtx.fillStyle = subColor;
+            aCtx.fillText(`of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, centerX, centerY + 14*dpr);
+            aCtx.globalCompositeOperation = 'destination-out';
+            buildWaterPathOn(aCtx); aCtx.fill();
+            aCtx.restore(); aCtx.globalCompositeOperation = 'source-over';
 
-            // Submerged text (clip = water path)
-            ctx.save();
-            ctx.beginPath();
-            drawRoundedRect(ctx, pad, pad, W-2*pad, H-2*pad, radius);
-            ctx.clip();
-            buildWaterPath();
-            ctx.clip();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font = `700 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            ctx.fillStyle = waterText;
-            ctx.fillText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
-            ctx.font = `600 ${smallSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            ctx.fillStyle = hexToRgba(waterBase, 0.8);
-            ctx.fillText(`of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, centerX, centerY + 14*dpr);
-            ctx.restore();
+            // Underwater: water-tinted text, keep only intersection with water
+            uCtx.save();
+            uCtx.beginPath();
+            drawRoundedRect(uCtx, pad, pad, W-2*pad, H-2*pad, radius);
+            uCtx.clip();
+            uCtx.textAlign = 'center'; uCtx.textBaseline = 'middle';
+            uCtx.font = `700 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+            uCtx.fillStyle = waterText;
+            uCtx.fillText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
+            uCtx.font = `600 ${smallSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+            uCtx.fillStyle = hexToRgba(waterBase, 0.8);
+            uCtx.fillText(`of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, centerX, centerY + 14*dpr);
+            uCtx.globalCompositeOperation = 'destination-in';
+            buildWaterPathOn(uCtx); uCtx.fill();
+            uCtx.restore(); uCtx.globalCompositeOperation = 'source-over';
+
+            // Composite onto main
+            ctx.drawImage(textCanvasAbove, 0, 0);
+            ctx.drawImage(textCanvasUnder, 0, 0);
         }
         function computePercent() {
             const goal = balanceGoal || getGoalDefault();
