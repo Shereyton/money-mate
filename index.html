@@ -328,8 +328,10 @@
         /* Fluid gauge */
         .liquid-wrap { position: relative; display: grid; place-items: center; }
         #balanceCanvas { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; }
-        /* Canvas now renders labels; hide DOM fallback */
-        .gauge-label { display: none; }
+        /* Gauge label (DOM overlay above canvas) */
+        .gauge-label { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--text); font-weight: 800; pointer-events: none; z-index: 2; }
+        .gauge-label .big { font-size: 1.6rem; letter-spacing: 0.5px; }
+        .gauge-label .small { display: block; font-size: 0.85rem; color: var(--muted); margin-top: 2px; font-weight: 600; }
         .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 14px; }
 
         /* Responsive form row for inputs */
@@ -1386,26 +1388,13 @@
             ctx.fillStyle = (financialData.balance >= 0) ? posColor : negColor;
             ctx.fill();
             ctx.restore();
-            // Draw labels on canvas for perfect integration with animation
-            const centerX = W / 2;
-            const centerY = H / 2;
-            const bigSize = 26 * dpr;
-            const smallSize = 12 * dpr;
-            const textColor = getCssVar('--text') || '#e5e7eb';
-            const subColor = getCssVar('--muted') || '#94a3b8';
-
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font = `800 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            ctx.lineWidth = 4 * dpr;
-            ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-            ctx.strokeText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
-            ctx.fillStyle = textColor;
-            ctx.fillText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
-
-            ctx.font = `600 ${smallSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            ctx.fillStyle = subColor;
-            ctx.fillText(`of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, centerX, centerY + 14*dpr);
+            // Update DOM overlay labels (consistent on mobile + desktop)
+            const main = document.getElementById('gaugeMain');
+            const sub = document.getElementById('gaugeSub');
+            if (main && sub) {
+                main.textContent = `${Math.round(percent)}%`;
+                sub.textContent = `of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`;
+            }
         }
         function computePercent() {
             const goal = balanceGoal || getGoalDefault();
