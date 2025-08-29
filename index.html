@@ -457,6 +457,7 @@
             z-index: 1000;
         }
         .theme-toggle .toggle-label { font-weight: 600; font-size: 0.9rem; }
+        .theme-toggle .toggle-icon { font-size: 1rem; line-height: 1; opacity: .9; margin: 0 6px 0 2px; }
         .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface); border: 1px solid var(--border); transition: .2s; border-radius: 999px; }
@@ -479,7 +480,9 @@
                 gap: 6px;
                 border-radius: 999px;
             }
+            /* On mobile: hide long labels but show icons for clarity */
             .theme-toggle .toggle-label { display: none; }
+            .theme-toggle .toggle-icon { display: inline-block; }
             .switch { width: 42px; height: 24px; }
             .slider:before { width: 18px; height: 18px; left: 3px; }
             input:checked + .slider:before { transform: translate(18px, -50%); }
@@ -489,12 +492,14 @@
 </head>
 <body>
     <div class="theme-toggle" title="Quick settings">
+        <span class="toggle-icon" aria-hidden="true" title="Sleek Mode">🌙</span>
         <label class="switch" title="Sleek Mode: modern dark glass UI (visual only)">
             <input type="checkbox" id="themeToggle" aria-label="Toggle Sleek Mode (modern dark look)">
             <span class="slider"></span>
         </label>
         <span class="toggle-label">Sleek Mode</span>
-        <label class="switch" style="margin-left:10px;" title="FX Mode: extra animations and motion (visual only)">
+        <span class="toggle-icon" aria-hidden="true" title="FX Mode" style="margin-left:10px;">✨</span>
+        <label class="switch" title="FX Mode: extra animations and motion (visual only)">
             <input type="checkbox" id="fxToggle" aria-label="Toggle FX Mode (extra animations)">
             <span class="slider"></span>
         </label>
