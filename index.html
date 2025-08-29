@@ -197,17 +197,39 @@
             will-change: background-position;
         }
 
-        /* Classic (non-sleek): tweak shimmer to blend with lighter cards */
+        /* Classic (non-sleek): layered shimmer = soft track + animated runner */
         body:not(.theme-sleek) .metric-card::before {
+            height: 2px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0)); /* subtle track shadow */
+            animation: none; /* static track */
+        }
+        body:not(.theme-sleek) .metric-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -30%;
+            width: 40%;
+            height: 3px;
+            border-radius: 999px;
             background: linear-gradient(
                 90deg,
                 transparent,
-                color-mix(in srgb, var(--primary) 45%, transparent),
-                color-mix(in srgb, var(--accent) 45%, transparent),
+                color-mix(in srgb, var(--primary) 55%, white 15%),
+                color-mix(in srgb, var(--accent) 55%, white 15%),
                 transparent
             );
-            background-size: 220% 100%;
-            filter: saturate(0.95) brightness(1.06);
+            filter: blur(0.2px) saturate(1.1);
+            mix-blend-mode: multiply; /* blend into light cards */
+            animation: classicShimmer 2.2s linear infinite;
+            will-change: transform, opacity;
+        }
+        @keyframes classicShimmer {
+            0%   { transform: translateX(0);    opacity: .85; }
+            50%  { transform: translateX(180%); opacity: 1; }
+            100% { transform: translateX(360%); opacity: .85; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            body:not(.theme-sleek) .metric-card::after { animation: none; opacity: .9; transform: translateX(240%); }
         }
 
         .metric-value {
