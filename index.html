@@ -464,6 +464,10 @@
         input:checked + .slider { background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end)); border-color: transparent; }
         input:checked + .slider:before { transform: translate(20px, -50%); }
 
+        /* Toggle quick explanations (desktop) */
+        .toggle-helptext { position: absolute; right: 0; top: calc(100% + 8px); display: flex; gap: 8px; align-items: center; background: var(--card-bg); border: 1px solid var(--border); padding: 6px 8px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); color: var(--muted); font-size: 0.8rem; }
+        .toggle-helptext .help-item { white-space: nowrap; }
+
         /* Mobile-friendly placement for toggles */
         @media (max-width: 640px) {
             .theme-toggle {
@@ -479,21 +483,26 @@
             .switch { width: 42px; height: 24px; }
             .slider:before { width: 18px; height: 18px; left: 3px; }
             input:checked + .slider:before { transform: translate(18px, -50%); }
+            .toggle-helptext { display: none; }
         }
     </style>
 </head>
 <body>
     <div class="theme-toggle" title="Quick settings">
-        <label class="switch" title="Toggle Sleek Mode (experimental)">
-            <input type="checkbox" id="themeToggle">
+        <label class="switch" title="Sleek Mode: modern dark glass UI (visual only)">
+            <input type="checkbox" id="themeToggle" aria-label="Toggle Sleek Mode (modern dark look)">
             <span class="slider"></span>
         </label>
         <span class="toggle-label">Sleek Mode</span>
-        <label class="switch" style="margin-left:10px;" title="Toggle extra animations/effects">
-            <input type="checkbox" id="fxToggle">
+        <label class="switch" style="margin-left:10px;" title="FX Mode: extra animations and motion (visual only)">
+            <input type="checkbox" id="fxToggle" aria-label="Toggle FX Mode (extra animations)">
             <span class="slider"></span>
         </label>
         <span class="toggle-label">FX Mode</span>
+        <div class="toggle-helptext" aria-hidden="true">
+            <span class="help-item">Sleek: modern dark look</span>
+            <span class="help-item">FX: extra animations</span>
+        </div>
     </div>
     <div class="container">
         <div class="header">
@@ -1066,6 +1075,8 @@
                 document.body.classList.toggle('theme-sleek', enabled);
                 localStorage.setItem('theme', enabled ? 'sleek' : 'classic');
                 updateChartsForTheme();
+                const msg = enabled ? 'Sleek Mode ON: modern dark glass look (visual only)' : 'Sleek Mode OFF: classic light look';
+                try { showToast(msg, 'info'); } catch (e) { /* no-op */ }
             });
         }
 
@@ -1076,8 +1087,20 @@
             fxToggle.addEventListener('change', () => {
                 fxEnabled = fxToggle.checked;
                 localStorage.setItem('fx', fxEnabled ? 'on' : 'off');
+                const msg = fxEnabled ? 'FX Mode ON: extra animations and motion (visual only)' : 'FX Mode OFF: reduced motion';
+                try { showToast(msg, 'info'); } catch (e) { /* no-op */ }
             });
         }
+
+        // Mobile clarity hint (first visit)
+        try {
+            const isMobileView = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+            const hintShown = localStorage.getItem('toggle_help_shown') === '1';
+            if (isMobileView && !hintShown) {
+                showToast('Tip: Sleek = dark look. FX = extra animations.', 'info');
+                localStorage.setItem('toggle_help_shown', '1');
+            }
+        } catch (e) { /* no-op */ }
 
         // Interactive: ripple on buttons
         document.addEventListener('click', function(e) {
