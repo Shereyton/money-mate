@@ -197,9 +197,9 @@
             right: 0;
             height: 4px;
             background: linear-gradient(90deg, transparent, var(--primary-gradient-start), var(--primary-gradient-end), transparent);
-            background-size: 260% 100%;
-            background-position: 0% 0;
-            animation: shimmer 2.4s linear infinite;
+            background-size: 200% 100%;
+            background-position: -50% 0;
+            animation: shimmer 2.2s linear infinite;
             will-change: background-position;
         }
 
@@ -207,8 +207,8 @@
         body:not(.theme-sleek) .metric-card::before {
             height: 4px;
             background: linear-gradient(90deg, transparent, #ff7a18, #3a7bd5, transparent);
-            background-size: 320% 100%;
-            animation: shimmer 1.8s linear infinite; /* same animation style, faster for pop */
+            background-size: 200% 100%; /* match sleek for identical motion */
+            /* no animation override here; use the global shimmer for identical timing */
             filter: saturate(1.15) contrast(1.12);
         }
 
@@ -449,12 +449,12 @@
         }
 
         @keyframes shimmer {
-            0% { background-position: 0% 0; }
-            100% { background-position: 200% 0; }
+            0%   { background-position: -50% 0; }
+            100% { background-position: 150% 0; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .metric-card::before { animation: none; background-position: 100% 0; }
+            .metric-card::before { animation: none; background-position: 150% 0; }
         }
 
         .pulse {
