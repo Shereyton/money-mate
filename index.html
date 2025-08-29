@@ -211,20 +211,12 @@
             width: 40%;
             height: 3px;
             border-radius: 999px;
-            /* Fallback gradient (for browsers without color-mix) */
-            background: linear-gradient(90deg, transparent, #a5b4fc, #93c5fd, transparent);
-            /* Blend from theme colors where supported */
-            background: linear-gradient(
-                90deg,
-                transparent,
-                color-mix(in srgb, var(--primary) 35%, white 65%),
-                color-mix(in srgb, var(--accent) 35%, white 65%),
-                transparent
-            );
+            /* Explicit light gradient so Classic looks distinct from Sleek */
+            background: linear-gradient(90deg, transparent, #c7d2fe, #bae6fd, transparent);
             opacity: .9;
-            filter: blur(0.2px) saturate(1.05);
+            filter: blur(0.2px) saturate(1.0);
             mix-blend-mode: normal; /* avoid darkening on light cards */
-            animation: classicShimmer 2.8s linear infinite;
+            animation: classicShimmer 2.6s linear infinite;
             will-change: transform, opacity, background;
         }
         @keyframes classicShimmer {
