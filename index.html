@@ -413,7 +413,7 @@
         .progress-value { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; color: var(--text); }
 
         /* Toasts */
-        #toastContainer { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 10000; }
+        #toastContainer { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 10000; pointer-events: none; }
         .toast { background: var(--toast-bg); color: var(--toast-text); padding: 10px 14px; border-radius: 10px; opacity: 0; transform: translateY(8px); transition: opacity .2s ease, transform .2s ease; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.success { background: linear-gradient(135deg, var(--success), var(--accent)); }
@@ -496,6 +496,8 @@
 
         /* Mobile-friendly placement for toggles */
         @media (max-width: 640px) {
+            /* Move toasts to the top, don’t block toggles */
+            #toastContainer { top: max(10px, env(safe-area-inset-top)); bottom: auto; right: 50%; left: 50%; transform: translateX(-50%); width: min(92vw, 420px); align-items: center; }
             .theme-toggle {
                 top: auto;
                 bottom: 12px;
@@ -1141,6 +1143,15 @@
             } catch {}
         }
 
+        // Toasts for toggles: explain once per session to avoid noise
+        function showOnce(key, message) {
+            try {
+                if (localStorage.getItem(key) === '1') return;
+                localStorage.setItem(key, '1');
+                showToast(message, 'info');
+            } catch (e) { showToast(message, 'info'); }
+        }
+
         if (themeToggle) {
             themeToggle.addEventListener('change', () => {
                 const enabled = themeToggle.checked;
@@ -1148,7 +1159,7 @@
                 localStorage.setItem('theme', enabled ? 'sleek' : 'classic');
                 updateChartsForTheme();
                 const msg = enabled ? 'Sleek Mode ON: modern dark glass look (visual only)' : 'Sleek Mode OFF: classic light look';
-                try { showToast(msg, 'info'); } catch (e) { /* no-op */ }
+                showOnce('sleek_help_once', 'Sleek: modern dark look (visual only)');
                 playMoonFx();
             });
         }
@@ -1161,7 +1172,7 @@
                 fxEnabled = fxToggle.checked;
                 localStorage.setItem('fx', fxEnabled ? 'on' : 'off');
                 const msg = fxEnabled ? 'FX Mode ON: extra animations and motion (visual only)' : 'FX Mode OFF: reduced motion';
-                try { showToast(msg, 'info'); } catch (e) { /* no-op */ }
+                showOnce('fx_help_once', 'FX: extra animations (visual only)');
                 playSparklesFx();
             });
         }
@@ -1171,7 +1182,7 @@
             const isMobileView = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
             const hintShown = localStorage.getItem('toggle_help_shown') === '1';
             if (isMobileView && !hintShown) {
-                showToast('Tip: Sleek = dark look. FX = extra animations.', 'info');
+                showToast('Tip: 🌙 Sleek = dark look • ✨ FX = extra animations', 'info');
                 localStorage.setItem('toggle_help_shown', '1');
             }
         } catch (e) { /* no-op */ }
@@ -1211,12 +1222,18 @@
 
         // Toast notifications
         function showToast(message, type='info') {
+            const cont = document.getElementById('toastContainer');
+            // keep at most 2 toasts to avoid stacking on spam
+            while (cont.children.length > 1) cont.firstChild.remove();
             const box = document.createElement('div');
             box.className = `toast ${type}`;
             box.textContent = message;
-            document.getElementById('toastContainer').appendChild(box);
-            setTimeout(() => box.classList.add('show'));
-            setTimeout(() => { box.classList.remove('show'); box.remove(); }, 2500);
+            cont.appendChild(box);
+            // shorter display on narrow screens
+            const isMobileView = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+            const life = isMobileView ? 1600 : 2400;
+            requestAnimationFrame(() => box.classList.add('show'));
+            setTimeout(() => { box.classList.remove('show'); setTimeout(()=> box.remove(), 200); }, life);
         }
 
         // Shake invalid input
