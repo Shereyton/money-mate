@@ -1387,29 +1387,59 @@
             ctx.fill();
             ctx.restore();
 
-            // Draw percentage and sublabel onto canvas so waves never cover text
+            // Draw labels integrated with wave (two layers: above-water and submerged)
             const centerX = W/2;
             const centerY = H/2;
-            const bigSize = 26 * dpr; // responsive to DPR
-            const smallSize = 12 * dpr;
+            const bigSize = Math.min(H * 0.18, 28 * dpr);
+            const smallSize = Math.min(H * 0.095, 13 * dpr);
             const textColor = getCssVar('--text') || '#e5e7eb';
             const subColor = getCssVar('--muted') || '#94a3b8';
+            const waterBase = (financialData.balance >= 0) ? (gaugeColors.primary || '#8b5cf6') : (gaugeColors.danger || '#ef4444');
+            const waterText = hexToRgba(waterBase, 0.95);
 
+            function buildWaterPath() {
+                ctx.beginPath();
+                ctx.moveTo(0, H);
+                for (let x=0; x<=W; x+=2*dpr) {
+                    const y = level + Math.sin((x + phase) * k) * amp;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(W, H);
+                ctx.closePath();
+            }
+
+            // Above-water text (clip = rounded-rect minus water path via evenodd)
+            ctx.save();
+            ctx.beginPath();
+            drawRoundedRect(ctx, pad, pad, W-2*pad, H-2*pad, radius);
+            buildWaterPath();
+            ctx.clip('evenodd');
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            // Main percent with subtle outline for readability
-            ctx.font = `800 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-            ctx.lineWidth = 4 * dpr;
-            ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-            ctx.strokeText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
+            ctx.font = `700 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
             ctx.fillStyle = textColor;
             ctx.fillText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
-
-            // Sub text
             ctx.font = `600 ${smallSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
             ctx.fillStyle = subColor;
-            const goalText = `of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`;
-            ctx.fillText(goalText, centerX, centerY + 14*dpr);
+            ctx.fillText(`of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, centerX, centerY + 14*dpr);
+            ctx.restore();
+
+            // Submerged text (clip = water path)
+            ctx.save();
+            ctx.beginPath();
+            drawRoundedRect(ctx, pad, pad, W-2*pad, H-2*pad, radius);
+            ctx.clip();
+            buildWaterPath();
+            ctx.clip();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = `700 ${bigSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+            ctx.fillStyle = waterText;
+            ctx.fillText(`${Math.round(percent)}%`, centerX, centerY - 6*dpr);
+            ctx.font = `600 ${smallSize}px Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+            ctx.fillStyle = hexToRgba(waterBase, 0.8);
+            ctx.fillText(`of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, centerX, centerY + 14*dpr);
+            ctx.restore();
         }
         function computePercent() {
             const goal = balanceGoal || getGoalDefault();
