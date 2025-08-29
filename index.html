@@ -211,12 +211,19 @@
             width: 40%;
             height: 3px;
             border-radius: 999px;
-            /* Explicit light gradient so Classic looks distinct from Sleek */
-            background: linear-gradient(90deg, transparent, #c7d2fe, #bae6fd, transparent);
-            opacity: .9;
-            filter: blur(0.2px) saturate(1.0);
-            mix-blend-mode: normal; /* avoid darkening on light cards */
-            animation: classicShimmer 2.6s linear infinite;
+            /* Darker, high-contrast runner in Classic: orange → blue */
+            background: linear-gradient(
+                90deg,
+                rgba(0,0,0,0),
+                #f59e0b 22%,
+                #2563eb 78%,
+                rgba(0,0,0,0)
+            );
+            opacity: 1;
+            filter: saturate(1.05) contrast(1.05);
+            box-shadow: 0 0 0.5px rgba(0,0,0,0.15);
+            mix-blend-mode: normal;
+            animation: classicShimmer 2.1s linear infinite;
             will-change: transform, opacity, background;
         }
         @keyframes classicShimmer {
