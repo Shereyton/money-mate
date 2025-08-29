@@ -176,7 +176,7 @@
         .metric-card {
             text-align: center;
             position: relative;
-            overflow: visible;
+            overflow: hidden; /* keep animations clipped to the card */
             min-height: 180px;
             display: flex;
             flex-direction: column;
@@ -190,8 +190,11 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, var(--primary-gradient-start), var(--primary-gradient-end));
-            animation: shimmer 2s infinite;
+            background: linear-gradient(90deg, transparent, var(--primary-gradient-start), var(--primary-gradient-end), transparent);
+            background-size: 260% 100%;
+            background-position: 0% 0;
+            animation: shimmer 2.4s linear infinite;
+            will-change: background-position;
         }
 
         .metric-value {
@@ -431,8 +434,12 @@
         }
 
         @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(200%); }
+            0% { background-position: 0% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .metric-card::before { animation: none; background-position: 100% 0; }
         }
 
         .pulse {
