@@ -330,8 +330,8 @@
         #balanceCanvas { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; }
         /* Gauge label (DOM overlay above canvas) */
         .gauge-label { position: absolute; left: 0; right: 0; top: var(--gauge-center-top, 50%); transform: translateY(-50%); text-align: center; color: var(--text); font-weight: 800; pointer-events: none; z-index: 2; }
-        .gauge-label .big { font-size: 1.6rem; letter-spacing: 0.5px; line-height: 1.1; }
-        .gauge-label .small { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); font-weight: 600; line-height: 1; }
+        .gauge-label .big { font-size: 1.5rem; letter-spacing: 0.5px; line-height: 1.05; font-weight: 800; }
+        .gauge-label .small { display: block; margin-top: 2px; font-size: 0.8rem; color: var(--muted); font-weight: 600; line-height: 1; }
         .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 14px; }
 
         /* Responsive form row for inputs */
@@ -1403,11 +1403,15 @@
                 const maxCenter = (H - pad)/dpr - margin;
                 const label = document.querySelector('.gauge-label');
                 if (label) {
+                    // Measure label height in CSS pixels
                     const rect = label.getBoundingClientRect();
-                    const labelHeight = rect.height || 32; // fallback
-                    // ensure bottom (center + height/2) <= crestY - margin
-                    let allowedCenter = crestY - margin - (labelHeight/2);
-                    let newCenter = Math.min(defaultCenter, allowedCenter);
+                    const labelHeight = (rect.height || 30);
+                    const marginBottom = 10; // keep label bottom above crest
+                    // compute center so bottom clears crest
+                    let newCenter = crestY - marginBottom - (labelHeight/2);
+                    // blend towards default center for smoother motion
+                    const blend = 0.4; // lower = closer to crest
+                    newCenter = newCenter * (1-blend) + (defaultCenter * blend);
                     newCenter = Math.max(minCenter, Math.min(newCenter, maxCenter));
                     label.style.setProperty('--gauge-center-top', `${newCenter}px`);
                 }
