@@ -91,6 +91,12 @@
             min-height: 100vh;
             padding: 20px;
         }
+        
+        /* Slightly deepen Classic background to help shimmer stand out */
+        body:not(.theme-sleek) {
+            --bg-gradient-start: #5e6ee5; /* slightly deeper indigo */
+            --bg-gradient-end: #6e56a9;   /* slightly deeper purple */
+        }
 
         .container {
             max-width: 1400px;
@@ -209,21 +215,15 @@
             top: 0;
             left: -30%;
             width: 40%;
-            height: 3px;
+            height: 4px; /* a touch thicker for visibility */
             border-radius: 999px;
-            /* Darker, high-contrast runner in Classic: orange → blue */
-            background: linear-gradient(
-                90deg,
-                rgba(0,0,0,0),
-                #f59e0b 22%,
-                #2563eb 78%,
-                rgba(0,0,0,0)
-            );
+            /* High-contrast classic runner: warm→cool with subtle glow */
+            background: linear-gradient(90deg, rgba(0,0,0,0), #f97316 25%, #3b82f6 75%, rgba(0,0,0,0));
             opacity: 1;
-            filter: saturate(1.05) contrast(1.05);
-            box-shadow: 0 0 0.5px rgba(0,0,0,0.15);
+            filter: saturate(1.12) contrast(1.06);
+            box-shadow: 0 0 6px rgba(249, 115, 22, 0.25), 0 0 8px rgba(59, 130, 246, 0.22);
             mix-blend-mode: normal;
-            animation: classicShimmer 2.1s linear infinite;
+            animation: classicShimmer 2.0s linear infinite;
             will-change: transform, opacity, background;
         }
         @keyframes classicShimmer {
