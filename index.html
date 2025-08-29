@@ -1394,17 +1394,23 @@
             if (main && sub) {
                 main.textContent = `${Math.round(percent)}%`;
                 sub.textContent = `of $${(balanceGoal||0).toLocaleString(undefined,{maximumFractionDigits:0})}`;
-                // Position the whole label group so it never overlaps the wave crest at center
+                // Position the label group so its bottom edge stays above the crest at center
                 const centerX = W/2;
-                const crestY = (pad + (H-2*pad) * (1 - percent/100) + Math.sin((centerX + phase) * k) * amp) / dpr;
-                const defaultCenter = (H/2)/dpr;
-                const margin = 18; // keep label block above crest comfortably
+                const crestY = (pad + (H-2*pad) * (1 - percent/100) + Math.sin((centerX + phase) * k) * amp) / dpr; // px
+                const defaultCenter = (H/2)/dpr; // px
+                const margin = 16; // px
                 const minCenter = pad/dpr + margin;
                 const maxCenter = (H - pad)/dpr - margin;
-                let newCenter = Math.min(defaultCenter, crestY - margin);
-                newCenter = Math.max(minCenter, Math.min(newCenter, maxCenter));
                 const label = document.querySelector('.gauge-label');
-                if (label) label.style.setProperty('--gauge-center-top', `${newCenter}px`);
+                if (label) {
+                    const rect = label.getBoundingClientRect();
+                    const labelHeight = rect.height || 32; // fallback
+                    // ensure bottom (center + height/2) <= crestY - margin
+                    let allowedCenter = crestY - margin - (labelHeight/2);
+                    let newCenter = Math.min(defaultCenter, allowedCenter);
+                    newCenter = Math.max(minCenter, Math.min(newCenter, maxCenter));
+                    label.style.setProperty('--gauge-center-top', `${newCenter}px`);
+                }
             }
         }
         function computePercent() {
