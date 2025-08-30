@@ -350,6 +350,19 @@
         .expense-item .amount { font-weight: 600; color: var(--text); white-space: nowrap; }
         .expense-item .actions { display: flex; gap: 8px; }
 
+        /* Search/sort/group controls */
+        .list-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; margin: 10px 0 6px; }
+        .list-controls input, .list-controls select { padding: 10px 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; }
+        .group-toggle { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text); }
+
+        /* Category sections */
+        .category-section { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin: 8px 0; }
+        .category-header { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--surface); color: var(--text); border: 0; cursor: pointer; font-weight: 800; }
+        .category-header .meta { color: var(--muted); font-weight: 700; }
+        .category-items { padding: 10px; }
+        .chev { transition: transform .2s ease; }
+        .collapsed .chev { transform: rotate(-90deg); }
+
         /* Mobile adjustments to avoid overlap and keep symmetry */
         @media (max-width: 640px) {
             .expense-item { flex-wrap: wrap; align-items: flex-start; }
@@ -358,6 +371,7 @@
             .expense-item .actions { order: 3; width: 100%; }
             .expense-item .actions .btn,
             .expense-item .actions .delete-btn { flex: 1 1 50%; }
+            .list-controls { grid-template-columns: 1fr; }
         }
 
         /* Chips */
@@ -780,6 +794,17 @@
             </div>
             
             <div class="chip-group" id="filterChips"></div>
+            <div class="list-controls" id="listControls">
+                <input type="search" id="expenseSearch" placeholder="Search expenses" />
+                <select id="expenseSort" aria-label="Sort expenses">
+                    <option value="recent">Recent</option>
+                    <option value="amountDesc">Amount: High → Low</option>
+                    <option value="amountAsc">Amount: Low → High</option>
+                    <option value="nameAsc">Name: A → Z</option>
+                    <option value="nameDesc">Name: Z → A</option>
+                </select>
+                <label class="group-toggle"><input type="checkbox" id="groupByCategory"> Group by category</label>
+            </div>
             <div class="expense-list" id="expenseList"></div>
         </div>
 
@@ -1217,32 +1242,99 @@
             saveData();
         }
 
-        // Render expenses list (includes name + edit)
+        // Render expenses list (includes name + edit, search/sort/group)
         let activeFilter = 'All';
+        let searchQuery = '';
+        let sortMode = 'recent';
+        let groupByCat = false;
+        const collapsedCategories = {};
+        function formatMoney(n){ return '$' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+        function toggleCategory(cat){ collapsedCategories[cat] = !collapsedCategories[cat]; renderExpenses(); }
         function renderExpenses() {
             const expenseList = document.getElementById('expenseList');
             expenseList.innerHTML = '';
 
-            financialData.expenses
-                .filter(exp => activeFilter === 'All' || exp.category === activeFilter)
-                .forEach(expense => {
-                const item = document.createElement('div');
-                item.className = 'expense-item';
-                item.dataset.id = String(expense.id);
-                const safeName = (expense.name || '').replace(/"/g,'&quot;');
-                const nameHtml = (expense.name && expense.name.trim()) ? `<div class="expense-name">${safeName}</div>` : '';
-                item.innerHTML = `
-                    <div class="primary">
-                        <span class="expense-category" style="background: ${categoryColors[expense.category]}">${expense.category}</span>
-                        ${nameHtml}
-                    </div>
-                    <div class="amount">$${expense.amount.toFixed(2)}</div>
-                    <div class="actions">
-                        <button class="btn" style="padding:6px 10px;" onclick="editExpense(${expense.id})">Edit</button>
-                        <button class="delete-btn" onclick="deleteExpense(${expense.id})">Delete</button>
-                    </div>
+            // Base filter by category chip
+            let list = financialData.expenses.filter(exp => activeFilter === 'All' || exp.category === activeFilter);
+            // Search by name or category
+            const q = (searchQuery||'').trim().toLowerCase();
+            if (q) {
+                list = list.filter(e => (e.name||'').toLowerCase().includes(q) || (e.category||'').toLowerCase().includes(q));
+            }
+            // Sort
+            list = list.slice();
+            if (sortMode === 'amountDesc') list.sort((a,b)=> (b.amount||0)-(a.amount||0));
+            else if (sortMode === 'amountAsc') list.sort((a,b)=> (a.amount||0)-(b.amount||0));
+            else if (sortMode === 'nameAsc') list.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+            else if (sortMode === 'nameDesc') list.sort((a,b)=> (b.name||'').localeCompare(a.name||''));
+            else /* recent */ list.sort((a,b)=> (b.id||0)-(a.id||0));
+
+            if (!groupByCat) {
+                // Flat list
+                list.forEach(expense => {
+                    const item = document.createElement('div');
+                    item.className = 'expense-item';
+                    item.dataset.id = String(expense.id);
+                    const safeName = (expense.name || '').replace(/"/g,'&quot;');
+                    const nameHtml = (expense.name && expense.name.trim()) ? `<div class="expense-name">${safeName}</div>` : '';
+                    item.innerHTML = `
+                        <div class="primary">
+                            <span class="expense-category" style="background: ${categoryColors[expense.category]}">${expense.category}</span>
+                            ${nameHtml}
+                        </div>
+                        <div class="amount">${formatMoney(expense.amount)}</div>
+                        <div class="actions">
+                            <button class="btn" style="padding:6px 10px;" onclick="editExpense(${expense.id})">Edit</button>
+                            <button class="delete-btn" onclick="deleteExpense(${expense.id})">Delete</button>
+                        </div>
+                    `;
+                    expenseList.appendChild(item);
+                });
+                return;
+            }
+
+            // Grouped by category: build sections
+            const byCat = {};
+            list.forEach(e => { (byCat[e.category] = byCat[e.category] || []).push(e); });
+            const cats = Object.keys(byCat);
+            // Order categories by total desc
+            cats.sort((a,b)=> byCat[b].reduce((s,x)=>s+(x.amount||0),0) - byCat[a].reduce((s,x)=>s+(x.amount||0),0));
+            cats.forEach(cat => {
+                const items = byCat[cat];
+                const total = items.reduce((s,x)=>s+(x.amount||0),0);
+                const sec = document.createElement('div');
+                sec.className = 'category-section' + (collapsedCategories[cat] ? ' collapsed' : '');
+                const head = document.createElement('button');
+                head.className = 'category-header';
+                head.innerHTML = `
+                    <span><span class="expense-category" style="background:${categoryColors[cat]||getCssVar('--primary')}">${cat}</span></span>
+                    <span class="meta">${items.length} • ${formatMoney(total)} <span class="chev">▾</span></span>
                 `;
-                expenseList.appendChild(item);
+                head.onclick = () => toggleCategory(cat);
+                const body = document.createElement('div');
+                body.className = 'category-items';
+                body.style.display = collapsedCategories[cat] ? 'none' : 'block';
+                items.forEach(expense => {
+                    const row = document.createElement('div');
+                    row.className = 'expense-item';
+                    row.dataset.id = String(expense.id);
+                    const safeName = (expense.name || '').replace(/"/g,'&quot;');
+                    const nameHtml = (expense.name && expense.name.trim()) ? `<div class="expense-name">${safeName}</div>` : '';
+                    row.innerHTML = `
+                        <div class="primary">
+                            ${nameHtml}
+                        </div>
+                        <div class="amount">${formatMoney(expense.amount)}</div>
+                        <div class="actions">
+                            <button class="btn" style="padding:6px 10px;" onclick="editExpense(${expense.id})">Edit</button>
+                            <button class="delete-btn" onclick="deleteExpense(${expense.id})">Delete</button>
+                        </div>
+                    `;
+                    body.appendChild(row);
+                });
+                sec.appendChild(head);
+                sec.appendChild(body);
+                expenseList.appendChild(sec);
             });
         }
 
@@ -1304,6 +1396,14 @@
             popMetrics();
             updateBalanceClass();
         }
+
+        // List controls events
+        const searchEl = document.getElementById('expenseSearch');
+        const sortEl = document.getElementById('expenseSort');
+        const groupEl = document.getElementById('groupByCategory');
+        if (searchEl) searchEl.addEventListener('input', () => { searchQuery = searchEl.value || ''; renderExpenses(); });
+        if (sortEl) sortEl.addEventListener('change', () => { sortMode = sortEl.value || 'recent'; renderExpenses(); });
+        if (groupEl) groupEl.addEventListener('change', () => { groupByCat = !!groupEl.checked; renderExpenses(); });
 
         // Animate value changes with timer dedupe and robust parsing
         const valueTimers = {};
