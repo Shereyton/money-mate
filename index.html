@@ -382,6 +382,19 @@
             .advisor .controls { grid-template-columns: 1fr; }
         }
 
+        /* Growing Tree (Savings) */
+        .tree-card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .tree-wrap { position: relative; display: grid; place-items: center; }
+        #treeCanvas { width: 100%; max-width: 420px; height: auto; display: block; }
+        .tree-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 10px; }
+        .tree-kpis .k { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+        .tree-kpis .k .label { color: var(--muted); font-weight: 700; font-size: .85rem; }
+        .tree-kpis .k .value { color: var(--text); font-weight: 800; font-size: 1.1rem; margin-top: 4px; }
+        .tree-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: end; margin-top: 12px; }
+        .tree-controls .input-group { margin: 0; }
+        .tree-controls input { padding: 10px 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; font-size: 16px; }
+        @media (max-width: 640px) { .tree-controls { grid-template-columns: 1fr; } }
+
         /* Mobile adjustments to avoid overlap and keep symmetry */
         @media (max-width: 640px) {
             .expense-item { flex-wrap: wrap; align-items: flex-start; }
@@ -893,6 +906,34 @@
                 <div class="help-text">Safe To Spend = Balance − Planned Upcoming − Reserve. Daily amount spreads it across the remaining days this month.</div>
             </div>
         </div>
+
+        <!-- Savings: Growing Tree -->
+        <div class="input-section tree-card" id="savingsSection">
+            <h2 style="margin-bottom: 10px; color: var(--text);">Growing Tree — Savings</h2>
+            <div class="tree-wrap">
+                <canvas id="treeCanvas" width="420" height="240"></canvas>
+            </div>
+            <div class="tree-kpis">
+                <div class="k"><div class="label">Saved</div><div class="value" id="savedNow">$0.00</div></div>
+                <div class="k"><div class="label">Goal</div><div class="value" id="savedGoal">$0.00</div></div>
+                <div class="k"><div class="label">Progress</div><div class="value" id="savedPct">0%</div></div>
+            </div>
+            <div class="tree-controls">
+                <div class="input-group">
+                    <label for="savingsGoalInput">Savings Goal ($)</label>
+                    <input type="number" id="savingsGoalInput" step="0.01" placeholder="e.g., 5000.00" />
+                </div>
+                <button class="btn" id="setSavingsGoalBtn">Set Goal</button>
+                <div></div>
+                <div class="input-group">
+                    <label for="savingsAmountInput">Amount ($)</label>
+                    <input type="number" id="savingsAmountInput" step="0.01" placeholder="0.00" />
+                </div>
+                <button class="btn" id="depositSavingsBtn">Deposit</button>
+                <button class="delete-btn" id="withdrawSavingsBtn">Withdraw</button>
+            </div>
+            <div class="help-text" style="margin-top:8px;">Deposits move money from Balance into Savings. Withdrawals move it back to Balance.</div>
+        </div>
     </div>
 
     <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
@@ -912,6 +953,8 @@
             try {
                 localStorage.setItem('financialData', JSON.stringify(financialData));
                 localStorage.setItem('balance', String(financialData.balance));
+                localStorage.setItem('savings', String(financialData.savings || 0));
+                localStorage.setItem('savingsGoal', String(financialData.savingsGoal || 0));
             } catch (e) {
                 console.error('Failed to save data', e);
             }
@@ -924,11 +967,23 @@
                     const parsed = JSON.parse(saved);
                     Object.assign(financialData, parsed);
                     if (!Array.isArray(financialData.planned)) financialData.planned = [];
+                    if (typeof financialData.savings !== 'number') {
+                        const s = parseFloat(localStorage.getItem('savings')||'');
+                        financialData.savings = isNaN(s)?0:s;
+                    }
+                    if (typeof financialData.savingsGoal !== 'number') {
+                        const g = parseFloat(localStorage.getItem('savingsGoal')||'');
+                        financialData.savingsGoal = isNaN(g)?0:g;
+                    }
                 } else {
                     const savedBalance = localStorage.getItem('balance');
                     if (savedBalance !== null) {
                         financialData.balance = parseFloat(savedBalance) || 0;
                     }
+                    const s = parseFloat(localStorage.getItem('savings')||'');
+                    financialData.savings = isNaN(s)?0:s;
+                    const g = parseFloat(localStorage.getItem('savingsGoal')||'');
+                    financialData.savingsGoal = isNaN(g)?0:g;
                 }
             } catch (e) {
                 console.error('Failed to load data', e);
@@ -1951,6 +2006,125 @@
             renderPlanned();
             updateAdvisor();
         })();
+
+        // Savings (Growing Tree) logic
+        const treeCanvas = document.getElementById('treeCanvas');
+        const setGoalBtn = document.getElementById('setSavingsGoalBtn');
+        const goalInput = document.getElementById('savingsGoalInput');
+        const amtInput = document.getElementById('savingsAmountInput');
+        const depositBtn = document.getElementById('depositSavingsBtn');
+        const withdrawBtn = document.getElementById('withdrawSavingsBtn');
+
+        function fmtMoney(n){ return '$' + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+        function savingsPercent(){ const g = parseFloat(financialData.savingsGoal)||0; const s = parseFloat(financialData.savings)||0; if(!g) return 0; return Math.max(0, Math.min(100, (s/g)*100)); }
+        function refreshTreeKPIs(){
+            const s = parseFloat(financialData.savings)||0;
+            const g = parseFloat(financialData.savingsGoal)||0;
+            const pct = savingsPercent();
+            const a = document.getElementById('savedNow'); if (a) a.textContent = fmtMoney(s);
+            const b = document.getElementById('savedGoal'); if (b) b.textContent = fmtMoney(g);
+            const c = document.getElementById('savedPct'); if (c) c.textContent = Math.round(pct) + '%';
+        }
+        function drawTree(){
+            if (!treeCanvas) return;
+            const ctx = treeCanvas.getContext('2d');
+            const W = treeCanvas.width, H = treeCanvas.height;
+            const dpr = window.devicePixelRatio || 1;
+            if (treeCanvas._scaled !== dpr) { treeCanvas.width = Math.round(W*dpr); treeCanvas.height = Math.round(H*dpr); treeCanvas.style.width = W+'px'; treeCanvas.style.height = H+'px'; treeCanvas._scaled = dpr; }
+            const w = treeCanvas.width, h = treeCanvas.height;
+            ctx.clearRect(0,0,w,h);
+            ctx.save(); ctx.scale(dpr, dpr);
+
+            const groundY = H*0.62;
+            // background
+            ctx.fillStyle = getCssVar('--surface') || '#f9fafb';
+            ctx.fillRect(0,0,W,H);
+            // ground
+            ctx.fillStyle = hexToRgba(getCssVar('--primary')||'#667eea', 0.12);
+            ctx.fillRect(0, groundY, W, H-groundY);
+            ctx.strokeStyle = hexToRgba(getCssVar('--text')||'#374151', 0.2);
+            ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
+
+            const pct = savingsPercent();
+            const centerX = W/2;
+            // seed below ground (visible when pct ~ 0)
+            const seedY = groundY + 14;
+            const seedR = 6;
+            ctx.fillStyle = hexToRgba(getCssVar('--danger')||'#ef4444', 0.8);
+            ctx.beginPath(); ctx.arc(centerX, seedY, seedR, 0, Math.PI*2); ctx.fill();
+
+            // trunk height maps from 0..100% to 0..H*0.45
+            const maxTrunk = H*0.45;
+            const trunkH = (pct/100) * maxTrunk;
+            if (trunkH > 2) {
+                ctx.strokeStyle = getCssVar('--text') || '#374151';
+                ctx.lineWidth = 6; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(centerX, groundY); ctx.lineTo(centerX, groundY - trunkH); ctx.stroke();
+                // branches
+                const levels = Math.max(1, Math.floor(pct/25));
+                ctx.lineWidth = 4;
+                for (let i=1; i<=levels; i++) {
+                    const y = groundY - (trunkH * (i/(levels+0.5)));
+                    const offset = 22 + i*3;
+                    ctx.beginPath(); ctx.moveTo(centerX, y); ctx.lineTo(centerX - offset, y - 6); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(centerX, y); ctx.lineTo(centerX + offset, y - 6); ctx.stroke();
+                }
+                // canopy size grows with pct
+                const canopyR = 14 + (pct/100) * 28;
+                const canopyY = groundY - trunkH - (canopyR*0.2);
+                ctx.fillStyle = hexToRgba(getCssVar('--success')||'#10b981', 0.85);
+                ctx.beginPath(); ctx.arc(centerX - canopyR*0.6, canopyY, canopyR*0.9, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(centerX + canopyR*0.6, canopyY, canopyR, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(centerX, canopyY + canopyR*0.2, canopyR*1.05, 0, Math.PI*2); ctx.fill();
+            } else {
+                // tiny sprout above ground for small progress
+                if (pct > 0) {
+                    ctx.strokeStyle = getCssVar('--text') || '#374151';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(centerX, groundY); ctx.lineTo(centerX, groundY - 8); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(centerX, groundY - 6); ctx.lineTo(centerX + 8, groundY - 10); ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+        function refreshTree(){ refreshTreeKPIs(); drawTree(); }
+
+        function setSavingsGoal(){
+            const v = parseFloat(goalInput?.value);
+            if (isNaN(v) || v <= 0) { showToast('Enter a valid savings goal', 'error'); return; }
+            financialData.savingsGoal = v; saveData(); refreshTree(); showToast('Savings goal set','success');
+        }
+        function depositSavings(){
+            const amt = parseFloat(amtInput?.value);
+            if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
+            const bal = parseFloat(financialData.balance)||0;
+            if (amt > bal) { showToast('Not enough balance to deposit', 'error'); return; }
+            financialData.balance = bal - amt;
+            financialData.savings = (parseFloat(financialData.savings)||0) + amt;
+            const bInput = document.getElementById('balanceInput'); if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+            animateValue('balanceDisplay', financialData.balance);
+            updateBalanceClass();
+            saveData(); refreshTree(); updateAdvisor(); showToast('Deposited to savings','success');
+        }
+        function withdrawSavings(){
+            const amt = parseFloat(amtInput?.value);
+            if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
+            const s = parseFloat(financialData.savings)||0;
+            if (amt > s) { showToast('Amount exceeds savings', 'error'); return; }
+            financialData.savings = s - amt;
+            financialData.balance = (parseFloat(financialData.balance)||0) + amt;
+            const bInput = document.getElementById('balanceInput'); if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+            animateValue('balanceDisplay', financialData.balance);
+            updateBalanceClass();
+            saveData(); refreshTree(); updateAdvisor(); showToast('Withdrew from savings','warn');
+        }
+
+        if (setGoalBtn) setGoalBtn.addEventListener('click', setSavingsGoal);
+        if (goalInput) goalInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setSavingsGoal(); });
+        if (depositBtn) depositBtn.addEventListener('click', depositSavings);
+        if (withdrawBtn) withdrawBtn.addEventListener('click', withdrawSavings);
+        if (goalInput) goalInput.value = String((parseFloat(financialData.savingsGoal)||0).toFixed(2));
+        refreshTree();
 
         function renderPlanned(){
             const list = document.getElementById('plannedList');
