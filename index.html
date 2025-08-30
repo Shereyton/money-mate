@@ -675,7 +675,7 @@
                     <input type="number" id="balanceInput" placeholder="0.00" step="0.01">
                     <button class="btn" id="setBalanceBtn">Set</button>
                 </div>
-                <div class="help-text">Auto-updates when you add/delete expenses. You can edit anytime.</div>
+                <div class="help-text">Auto-updates when you add/delete expenses and checks. You can edit anytime.</div>
             </div>
 
             <div class="input-group">
@@ -923,6 +923,13 @@
             document.getElementById('checkAmount').value = '';
 
             updateIncomeFromChecks();
+            // Auto-increase balance when a check is added
+            financialData.balance = (parseFloat(financialData.balance) || 0) + amount;
+            localStorage.setItem('balance', String(financialData.balance));
+            const bInput = document.getElementById('balanceInput');
+            if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+            animateValue('balanceDisplay', financialData.balance);
+            updateBalanceClass();
             renderChecks();
             showToast(`Added check #${number} for $${amount.toFixed(2)}`, 'info');
             burst(ev);
@@ -931,8 +938,16 @@
         function deleteCheck(id) {
             const idx = financialData.checks.findIndex(c => c.id === id);
             if (idx !== -1) {
+                const check = financialData.checks[idx];
                 financialData.checks.splice(idx, 1);
                 updateIncomeFromChecks();
+                // Auto-decrease balance when a check is removed
+                financialData.balance = (parseFloat(financialData.balance) || 0) - (parseFloat(check.amount) || 0);
+                localStorage.setItem('balance', String(financialData.balance));
+                const bInput = document.getElementById('balanceInput');
+                if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+                animateValue('balanceDisplay', financialData.balance);
+                updateBalanceClass();
                 renderChecks();
                 showToast('Deleted check', 'warn');
             }
@@ -1346,7 +1361,9 @@
             label.textContent = `${percent}%`;
             const col = percent < 50 ? getCssVar('--success') : (percent < 80 ? getCssVar('--primary') : getCssVar('--danger'));
             ring.style.stroke = col || '#10b981';
-            ringBg.style.stroke = hexToRgba(col || '#10b981', 0.15);
+            if (ringBg) {
+                ringBg.style.stroke = hexToRgba(col || '#10b981', 0.15);
+            }
         }
 
         // Pop metric values on update
