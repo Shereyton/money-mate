@@ -364,6 +364,24 @@
         .chev { transition: transform .2s ease; }
         .collapsed .chev { transform: rotate(-90deg); }
 
+        /* Spending Advisor */
+        .advisor { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .advisor h3 { margin: 0 0 10px; color: var(--text); }
+        .advisor .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .advisor .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+        .advisor .kpi .label { color: var(--muted); font-weight: 700; font-size: .85rem; }
+        .advisor .kpi .value { color: var(--text); font-weight: 800; font-size: 1.25rem; margin-top: 6px; }
+        .advisor .controls { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-top: 12px; }
+        .advisor .controls .input-group { margin: 0; }
+        .advisor .controls input { padding: 10px 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; font-size: 16px; }
+        .advisor .planned { margin-top: 12px; }
+        .advisor .planned-item { display:flex; justify-content: space-between; align-items:center; padding:10px; border-radius:10px; background: var(--surface); border: 1px solid var(--border); margin-top:6px; }
+        .advisor .planned-item .name { color: var(--text); font-weight: 700; overflow-wrap: anywhere; }
+        .advisor .planned-item .amt { font-weight: 800; }
+        @media (max-width: 640px) {
+            .advisor .controls { grid-template-columns: 1fr; }
+        }
+
         /* Mobile adjustments to avoid overlap and keep symmetry */
         @media (max-width: 640px) {
             .expense-item { flex-wrap: wrap; align-items: flex-start; }
@@ -811,7 +829,7 @@
             <div class="expense-list" id="expenseList"></div>
         </div>
 
-        <div class="charts-section">
+            <div class="charts-section">
             <div class="chart-container">
                 <h3 class="chart-title">📊 Income vs Expenses</h3>
                 <canvas id="barChart"></canvas>
@@ -835,6 +853,46 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Spending Advisor -->
+        <div class="input-section advisor" id="advisorSection">
+            <h2 style="margin-bottom: 10px; color: var(--text);">Spending Advisor</h2>
+            <div class="grid" style="margin-bottom: 8px;">
+                <div class="kpi">
+                    <div class="label">Safe To Spend Now</div>
+                    <div class="value" id="kpiSafeNow">$0.00</div>
+                </div>
+                <div class="kpi">
+                    <div class="label">Per Day (to month end)</div>
+                    <div class="value" id="kpiPerDay">$0.00</div>
+                </div>
+                <div class="kpi">
+                    <div class="label">Reserve</div>
+                    <div class="value" id="kpiReserve">$0.00</div>
+                </div>
+                <div class="kpi">
+                    <div class="label">Planned Upcoming</div>
+                    <div class="value" id="kpiPlanned">$0.00</div>
+                </div>
+            </div>
+            <div class="controls">
+                <div class="input-group">
+                    <label for="reservePercent">Reserve for savings and buffer (%)</label>
+                    <input type="number" id="reservePercent" min="0" max="90" step="1" placeholder="e.g., 20">
+                </div>
+                <button class="btn" id="applyReserveBtn">Apply</button>
+            </div>
+            <div class="planned">
+                <h3 style="margin: 12px 0 8px; color: var(--text); font-size:1.1rem;">Planned Upcoming Expenses</h3>
+                <div class="form-row" style="grid-template-columns: 2fr 1fr auto;">
+                    <div class="input-group"><label>Name</label><input type="text" id="plannedName" placeholder="e.g., Car insurance"/></div>
+                    <div class="input-group"><label>Amount ($)</label><input type="number" step="0.01" id="plannedAmount" placeholder="0.00"/></div>
+                    <button class="btn" id="addPlannedBtn">Add Planned</button>
+                </div>
+                <div id="plannedList"></div>
+                <div class="help-text">Safe To Spend = Balance − Planned Upcoming − Reserve. Daily amount spreads it across the remaining days this month.</div>
+            </div>
+        </div>
     </div>
 
     <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
@@ -846,7 +904,8 @@
             expenses: [],
             categories: {},
             checks: [],
-            balance: 0
+            balance: 0,
+            planned: []
         };
 
         function saveData() {
@@ -864,6 +923,7 @@
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     Object.assign(financialData, parsed);
+                    if (!Array.isArray(financialData.planned)) financialData.planned = [];
                 } else {
                     const savedBalance = localStorage.getItem('balance');
                     if (savedBalance !== null) {
@@ -1033,6 +1093,7 @@
             renderChecks();
             showToast(`Added check #${number} for $${amount.toFixed(2)}`, 'info');
             burst(ev);
+            updateAdvisor();
         }
 
         function deleteCheck(id) {
@@ -1042,6 +1103,7 @@
                 updateIncomeFromChecks();
                 renderChecks();
                 showToast('Deleted check', 'warn');
+                updateAdvisor();
             }
         }
 
@@ -1128,6 +1190,7 @@
             if (bInput) bInput.value = String(financialData.balance.toFixed(2));
             animateValue('balanceDisplay', financialData.balance);
             updateBalanceClass();
+            updateAdvisor();
             saveData();
         }
 
@@ -1151,6 +1214,7 @@
                 if (bInput) bInput.value = String(financialData.balance.toFixed(2));
                 animateValue('balanceDisplay', financialData.balance);
                 updateBalanceClass();
+                updateAdvisor();
                 saveData();
             }
         }
@@ -1241,6 +1305,7 @@
             updateDisplay();
             renderExpenses();
             renderFilterChips();
+            updateAdvisor();
             showToast('Expense updated', 'success');
             saveData();
         }
@@ -1398,6 +1463,8 @@
 
             popMetrics();
             updateBalanceClass();
+            // Advisor stays in sync
+            updateAdvisor();
         }
 
         // List controls events
@@ -1853,6 +1920,88 @@
         function tick() { phase += 0.8; refreshGauge(); requestAnimationFrame(tick); }
         tick();
         updateDisplay();
+        // Initialize advisor controls
+        (function initAdvisor(){
+            const reserveInput = document.getElementById('reservePercent');
+            const applyBtn = document.getElementById('applyReserveBtn');
+            const addBtn = document.getElementById('addPlannedBtn');
+            const nameEl = document.getElementById('plannedName');
+            const amtEl = document.getElementById('plannedAmount');
+            let reserve = parseFloat(localStorage.getItem('reservePercent')||'');
+            if (isNaN(reserve)) reserve = 20;
+            if (reserveInput) reserveInput.value = String(reserve);
+            function setReserve(){
+                const v = parseFloat(reserveInput.value);
+                if (!isNaN(v) && v >= 0) { localStorage.setItem('reservePercent', String(v)); updateAdvisor(); showToast('Reserve updated', 'info'); }
+            }
+            if (applyBtn) applyBtn.addEventListener('click', setReserve);
+            if (reserveInput) reserveInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setReserve(); });
+            if (addBtn) addBtn.addEventListener('click', ()=>{
+                const n = (nameEl?.value || '').trim();
+                const a = parseFloat(amtEl?.value);
+                if (!n) { showToast('Enter a planned name', 'error'); return; }
+                if (isNaN(a) || a<=0) { showToast('Enter a valid amount', 'error'); return; }
+                financialData.planned.push({ id: Date.now(), name: n, amount: a });
+                if (nameEl) nameEl.value = '';
+                if (amtEl) amtEl.value = '';
+                renderPlanned();
+                updateAdvisor();
+                saveData();
+            });
+            renderPlanned();
+            updateAdvisor();
+        })();
+
+        function renderPlanned(){
+            const list = document.getElementById('plannedList');
+            if (!list) return;
+            list.innerHTML = '';
+            (financialData.planned||[]).forEach(p => {
+                const row = document.createElement('div');
+                row.className = 'planned-item';
+                row.dataset.id = String(p.id);
+                row.innerHTML = `
+                    <div class="name">${(p.name||'').replace(/"/g,'&quot;')}</div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <div class="amt">$${(parseFloat(p.amount)||0).toFixed(2)}</div>
+                        <button class="delete-btn" onclick="deletePlanned(${p.id})">Delete</button>
+                    </div>`;
+                list.appendChild(row);
+            });
+        }
+
+        function deletePlanned(id){
+            const idx = (financialData.planned||[]).findIndex(p=>p.id===id);
+            if (idx>=0) { financialData.planned.splice(idx,1); renderPlanned(); updateAdvisor(); saveData(); showToast('Planned removed','warn'); }
+        }
+
+        function updateAdvisor(){
+            try {
+                const reservePct = parseFloat(localStorage.getItem('reservePercent')||'');
+                const pct = (!isNaN(reservePct) ? reservePct : 20) / 100;
+                const income = parseFloat(financialData.income)||0;
+                const balance = parseFloat(financialData.balance)||0;
+                const planned = (financialData.planned||[]).reduce((s,p)=> s + (parseFloat(p.amount)||0), 0);
+                const reserve = Math.max(0, income * pct);
+                let safe = balance - planned - reserve;
+                if (!isFinite(safe)) safe = 0;
+                safe = Math.max(0, safe);
+                const now = new Date();
+                const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+                const day = now.getDate();
+                const daysLeft = Math.max(1, daysInMonth - day + 1);
+                const perDay = safe / daysLeft;
+                const fmt = (n)=> '$' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+                const safeEl = document.getElementById('kpiSafeNow');
+                const perDayEl = document.getElementById('kpiPerDay');
+                const resEl = document.getElementById('kpiReserve');
+                const planEl = document.getElementById('kpiPlanned');
+                if (safeEl) safeEl.textContent = fmt(safe);
+                if (perDayEl) perDayEl.textContent = fmt(perDay);
+                if (resEl) resEl.textContent = fmt(reserve);
+                if (planEl) planEl.textContent = fmt(planned);
+            } catch {}
+        }
     </script>
 </body>
 </html>
