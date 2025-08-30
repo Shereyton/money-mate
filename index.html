@@ -2208,11 +2208,23 @@
                       `Z`
                     ].join(' ');
                     if (trunkFill) trunkFill.setAttribute('d', d);
-                    // branches
-                    if (branches) branches.setAttribute('opacity', String(clamp((ST.progress - 0.35)/0.25, 0, 1)));
-                    // canopy
-                    const canopyPhase = clamp((ST.progress - 0.25)/0.75, 0, 1);
-                    if (canopy) canopy.setAttribute('opacity', String(canopyPhase));
+                    // branches (follow trunk and fade in sooner)
+                    if (branches) {
+                        const brPhase = clamp((ST.progress - 0.25)/0.55, 0, 1);
+                        branches.setAttribute('opacity', String(brPhase));
+                        // lift branches to stay closer to trunk top
+                        const baseBranchAnchor = 68; // original average branch y
+                        const branchDy = (topY - baseBranchAnchor) * brPhase;
+                        branches.setAttribute('transform', `translate(0 ${branchDy.toFixed(2)})`);
+                    }
+                    // canopy grows in unison with trunk and anchors near trunk top
+                    const canopyPhase = clamp((ST.progress - 0.12)/0.70, 0, 1);
+                    if (canopy) {
+                        canopy.setAttribute('opacity', String(canopyPhase));
+                        const canopyDy = (topY - 56) * canopyPhase; // 56 is canopy base y
+                        canopy.setAttribute('transform', `translate(0 ${canopyDy.toFixed(2)})`);
+                        if (shine) shine.setAttribute('transform', `translate(0 ${canopyDy.toFixed(2)})`);
+                    }
                     if (shine) shine.setAttribute('opacity', String(canopyPhase*0.7));
                     const baseR = 5 + canopyPhase*14; // fuller, larger crown
                     const settle = 1 + Math.sin(performance.now()/350)*0.02*(1 - (1-canopyPhase));
