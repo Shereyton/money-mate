@@ -417,8 +417,12 @@
         .savings-tree-wrap .fade-in{ animation: fadeIn .5s ease-out both; }
         @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
         /* Bind SVG parts to realistic gradients/filters */
-        #SavingsTree svg .trunk   { stroke: url(#trunkGrad); }
-        #SavingsTree svg .branch  { stroke: url(#trunkGrad); }
+        /* Clean-edged trunk (no glow): solid fill, no filter, no stroke */
+        #SavingsTree svg .trunkFill{ fill: var(--tree-trunk-base); stroke: none; filter: none; shape-rendering: geometricPrecision; }
+        /* Solid bark color for strokes; avoids gradient fringing */
+        #SavingsTree svg .trunk   { stroke: var(--tree-trunk-base); filter: none; }
+        #SavingsTree svg .branch  { stroke: var(--tree-trunk-base); filter: none; }
+        /* Leaves keep rich gradients */
         #SavingsTree svg .leafFill{ fill:   url(#leafGrad); }
         #SavingsTree svg .leafShade{fill:   url(#leafGradDark); }
         #SavingsTree svg #canopy  { filter: url(#leafShadow); }
