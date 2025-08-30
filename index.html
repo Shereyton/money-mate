@@ -345,9 +345,15 @@
 
         /* Chips */
         .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; margin-bottom: 4px; }
-        .chip { border: 1px solid var(--chip-border); background: var(--chip-bg); color: var(--text); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-weight: 600; transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease; }
+        .chip { border: 1px solid var(--chip-border); background: var(--chip-bg); color: var(--text); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-weight: 600; transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
         .chip:hover { transform: translateY(-1px); }
-        .chip.active { background: color-mix(in srgb, var(--chip-bg) 70%, var(--chip-color)); color: var(--text-on-bg); border-color: transparent; }
+        /* Make active chip vivid and readable */
+        .chip.active { 
+            background: var(--chip-color);
+            color: var(--text-on-bg);
+            border-color: transparent;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
 
         .expense-category {
             display: inline-block;
