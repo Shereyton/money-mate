@@ -331,6 +331,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 10px;
@@ -341,6 +342,22 @@
 
         .expense-item:hover {
             background: var(--surface-hover);
+        }
+
+        /* Expense list layout helpers */
+        .expense-item > .primary { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .expense-item .expense-name { color: var(--muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
+        .expense-item .amount { font-weight: 600; color: var(--text); white-space: nowrap; }
+        .expense-item .actions { display: flex; gap: 8px; }
+
+        /* Mobile adjustments to avoid overlap and keep symmetry */
+        @media (max-width: 640px) {
+            .expense-item { flex-wrap: wrap; align-items: flex-start; }
+            .expense-item > .primary { flex: 1 1 100%; }
+            .expense-item .amount { order: 2; }
+            .expense-item .actions { order: 3; width: 100%; }
+            .expense-item .actions .btn,
+            .expense-item .actions .delete-btn { flex: 1 1 50%; }
         }
 
         /* Chips */
@@ -1212,14 +1229,15 @@
                 const item = document.createElement('div');
                 item.className = 'expense-item';
                 item.dataset.id = String(expense.id);
-                const nameHtml = (expense.name && expense.name.trim()) ? `<div style=\"color: var(--muted); font-weight:600;\">${expense.name.replace(/"/g,'&quot;')}</div>` : '';
+                const safeName = (expense.name || '').replace(/"/g,'&quot;');
+                const nameHtml = (expense.name && expense.name.trim()) ? `<div class="expense-name">${safeName}</div>` : '';
                 item.innerHTML = `
-                    <div>
+                    <div class="primary">
                         <span class="expense-category" style="background: ${categoryColors[expense.category]}">${expense.category}</span>
                         ${nameHtml}
                     </div>
-                    <div style="font-weight: 600; color: var(--text);">$${expense.amount.toFixed(2)}</div>
-                    <div style="display:flex; gap:8px;">
+                    <div class="amount">$${expense.amount.toFixed(2)}</div>
+                    <div class="actions">
                         <button class="btn" style="padding:6px 10px;" onclick="editExpense(${expense.id})">Edit</button>
                         <button class="delete-btn" onclick="deleteExpense(${expense.id})">Delete</button>
                     </div>
