@@ -2009,7 +2009,7 @@
 
         // Savings (Growing Tree) logic
         const treeCanvas = document.getElementById('treeCanvas');
-        const setGoalBtn = document.getElementById('setSavingsGoalBtn');
+        const savingsGoalBtn = document.getElementById('setSavingsGoalBtn');
         const goalInput = document.getElementById('savingsGoalInput');
         const amtInput = document.getElementById('savingsAmountInput');
         const depositBtn = document.getElementById('depositSavingsBtn');
@@ -2119,7 +2119,7 @@
             saveData(); refreshTree(); updateAdvisor(); showToast('Withdrew from savings','warn');
         }
 
-        if (setGoalBtn) setGoalBtn.addEventListener('click', setSavingsGoal);
+        if (savingsGoalBtn) savingsGoalBtn.addEventListener('click', setSavingsGoal);
         if (goalInput) goalInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setSavingsGoal(); });
         if (depositBtn) depositBtn.addEventListener('click', depositSavings);
         if (withdrawBtn) withdrawBtn.addEventListener('click', withdrawSavings);
