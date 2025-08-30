@@ -351,14 +351,15 @@
         .expense-item .actions { display: flex; gap: 8px; }
 
         /* Search/sort/group controls */
-        .list-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; margin: 10px 0 6px; }
-        .list-controls input, .list-controls select { padding: 10px 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; }
+        .list-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; margin: 10px 0 6px; align-items: center; }
+        .list-controls input, .list-controls select { padding: 10px 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; font-size: 16px; }
         .group-toggle { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text); }
 
         /* Category sections */
         .category-section { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin: 8px 0; }
-        .category-header { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--surface); color: var(--text); border: 0; cursor: pointer; font-weight: 800; }
-        .category-header .meta { color: var(--muted); font-weight: 700; }
+        .category-header { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 12px 14px; background: var(--surface); color: var(--text); border: 0; cursor: pointer; font-weight: 800; }
+        .category-header .title { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+        .category-header .meta { color: var(--muted); font-weight: 700; text-align: right; white-space: nowrap; }
         .category-items { padding: 10px; }
         .chev { transition: transform .2s ease; }
         .collapsed .chev { transform: rotate(-90deg); }
@@ -372,6 +373,8 @@
             .expense-item .actions .btn,
             .expense-item .actions .delete-btn { flex: 1 1 50%; }
             .list-controls { grid-template-columns: 1fr; }
+            .category-header { grid-template-columns: 1fr; }
+            .category-header .meta { text-align: left; }
         }
 
         /* Chips */
@@ -1307,7 +1310,7 @@
                 const head = document.createElement('button');
                 head.className = 'category-header';
                 head.innerHTML = `
-                    <span><span class="expense-category" style="background:${categoryColors[cat]||getCssVar('--primary')}">${cat}</span></span>
+                    <span class="title"><span class="expense-category" style="background:${categoryColors[cat]||getCssVar('--primary')}">${cat}</span></span>
                     <span class="meta">${items.length} • ${formatMoney(total)} <span class="chev">▾</span></span>
                 `;
                 head.onclick = () => toggleCategory(cat);
