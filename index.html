@@ -423,6 +423,33 @@
         #SavingsTree svg .leafShade{fill:   url(#leafGradDark); }
         #SavingsTree svg #canopy  { filter: url(#leafShadow); }
         #SavingsTree svg #seed circle { fill: var(--tree-trunk-shadow); }
+
+        /* === Ultra Real Tree & Ground (override-ready) === */
+        :root{
+          --tree-trunk-base:#6d4c2a;
+          --tree-trunk-shadow:#4e341a;
+          --leaf-light:#6fd27a;
+          --leaf-mid:#3daa52;
+          --leaf-dark:#1e7032;
+          --soil-top:#9a6a49;
+          --soil-mid:#7d5237;
+          --soil-deep:#5a3a27;
+          --soil-speck:rgba(0,0,0,.12);
+        }
+        #SavingsTree .soil{
+          background:
+            repeating-linear-gradient(to top,rgba(0,0,0,.04) 0px,rgba(0,0,0,.04) 3px,transparent 3px,transparent 10px),
+            radial-gradient(circle at 20% 72%,var(--soil-speck) 0 1px,transparent 2px),
+            radial-gradient(circle at 64% 86%,var(--soil-speck) 0 1px,transparent 2px),
+            radial-gradient(circle at 82% 63%,var(--soil-speck) 0 1px,transparent 2px),
+            linear-gradient(to top,var(--soil-deep),var(--soil-mid) 55%,var(--soil-top));
+        }
+        #SavingsTree svg .trunkFill{ fill:url(#trunkGrad); filter:url(#barkNoise); }
+        #SavingsTree svg .branch{ stroke:url(#trunkGrad); }
+        #SavingsTree svg .leafFill{ fill:url(#leafGrad); }
+        #SavingsTree svg .leafShade{ fill:url(#leafGradDark); }
+        #SavingsTree svg #canopy{ filter:url(#leafShadow); }
+        #SavingsTree svg #groundShadow{ fill:rgba(0,0,0,.15); filter:blur(1px); }
         .tree-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 10px; }
         .tree-kpis .k { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
         .tree-kpis .k .label { color: var(--muted); font-weight: 700; font-size: .85rem; }
@@ -982,6 +1009,8 @@
                         <feBlend in="SourceGraphic" in2="alpha" mode="multiply"/>
                       </filter>
                     </defs>
+                    <!-- Ground shadow under canopy -->
+                    <ellipse id="groundShadow" cx="50" cy="86.5" rx="4" ry="1.6" opacity="0" />
                     <!-- Seed -->
                     <g id="seed" class="fade-in">
                       <circle cx="50" cy="84" r="3.6"></circle>
@@ -992,8 +1021,8 @@
                       <path id="sproutStem" class="trunk" d="M50,84 L50,84" stroke-width="1.6" stroke-linecap="round" fill="none"/>
                       <path id="sproutLeaf" class="leafFill" d="M50,82 C51,81.6 52,81.2 52,80.6 C52,80 51,80 50,80.4 C49,80.8 48,81.2 48,81.8 C48,82.4 49,82.4 50,82 Z" opacity="0"/>
                     </g>
-                    <!-- Trunk -->
-                    <path id="trunk" class="trunk" d="M50,84 L50,84" stroke-width="3.2" stroke-linecap="round" fill="none" filter="url(#barkNoise)"/>
+                    <!-- Trunk (filled shape) -->
+                    <path id="trunkFill" class="trunkFill" d="M48,84 L52,84 L52,84 L48,84 Z"/>
                     <!-- Branches -->
                     <g id="branches" stroke-linecap="round" fill="none" opacity="0">
                       <path id="b1" class="branch" d="M50,74 C48,72 46,70 44,68" stroke-width="2.2"/>
@@ -2137,11 +2166,12 @@
             const seed = treeWrap.querySelector('#seed');
             const sproutStem = treeWrap.querySelector('#sproutStem');
             const sproutLeaf = treeWrap.querySelector('#sproutLeaf');
-            const trunk = treeWrap.querySelector('#trunk');
+            const trunkFill = treeWrap.querySelector('#trunkFill');
             const branches = treeWrap.querySelector('#branches');
             const canopy = treeWrap.querySelector('#canopy');
             const shine = treeWrap.querySelector('#shine');
             const canopyCircles = Array.from(canopy.querySelectorAll('circle'));
+            const groundShadow = treeWrap.querySelector('#groundShadow');
             const ease = (t)=> t<0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
             const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
             ST = { progress:0, raf:0, start:0, from:0, to:0,
@@ -2154,10 +2184,24 @@
                     const sprHeight = 84 - sprPhase*10;
                     if (sproutStem) sproutStem.setAttribute('d', `M50,84 L50,${sprHeight.toFixed(2)}`);
                     if (sproutLeaf) sproutLeaf.setAttribute('opacity', String(sprPhase));
-                    // trunk
+                    // trunk tapered fill
                     const trunkPhase = clamp((ST.progress - 0.15) / 0.75, 0, 1);
                     const topY = 84 - trunkPhase*28;
-                    if (trunk) trunk.setAttribute('d', `M50,84 L50,${topY.toFixed(2)}`);
+                    const baseHalf = 2.2 + trunkPhase*2.0;
+                    const topHalf  = 0.9 + trunkPhase*0.9;
+                    const leftTop  = (50 - topHalf).toFixed(2);
+                    const rightTop = (50 + topHalf).toFixed(2);
+                    const leftBase = (50 - baseHalf).toFixed(2);
+                    const rightBase= (50 + baseHalf).toFixed(2);
+                    const cY = (Number(topY)+84)/2;
+                    const d = [
+                      `M ${leftBase},84`,
+                      `Q ${leftTop},${cY.toFixed(2)} ${leftTop},${topY.toFixed(2)}`,
+                      `L ${rightTop},${topY.toFixed(2)}`,
+                      `Q ${rightTop},${cY.toFixed(2)} ${rightBase},84`,
+                      `Z`
+                    ].join(' ');
+                    if (trunkFill) trunkFill.setAttribute('d', d);
                     // branches
                     if (branches) branches.setAttribute('opacity', String(clamp((ST.progress - 0.35)/0.25, 0, 1)));
                     // canopy
@@ -2167,7 +2211,24 @@
                     const baseR = 4 + canopyPhase*12; // fuller crown
                     const settle = 1 + Math.sin(performance.now()/350)*0.02*(1 - (1-canopyPhase));
                     const jitter = [1.00, 0.92, 0.95, 0.88, 0.90, 1.05, 1.03, 0.97, 0.96];
-                    canopyCircles.forEach((c,i)=>{ c.setAttribute('r', (baseR * jitter[i % jitter.length] * (1 - i*0.05) * settle).toFixed(2)); });
+                    canopyCircles.forEach((c,i)=>{
+                        if (!c.dataset.cx0) { c.dataset.cx0 = c.getAttribute('cx'); c.dataset.cy0 = c.getAttribute('cy'); }
+                        const r = baseR * jitter[i % jitter.length] * (1 - i*0.05) * settle;
+                        c.setAttribute('r', r.toFixed(2));
+                        const baseCx = parseFloat(c.dataset.cx0);
+                        const baseCy = parseFloat(c.dataset.cy0);
+                        const wind = Math.sin(performance.now()/900)*0.6;
+                        const swayX = wind * (0.4 + (i%3)*0.2);
+                        const swayY = Math.cos(performance.now()/1100 + i)*0.3;
+                        c.setAttribute('cx', (baseCx + swayX).toFixed(2));
+                        c.setAttribute('cy', (baseCy + swayY).toFixed(2));
+                    });
+                    // ground shadow
+                    if (groundShadow) {
+                        const rx = 4 + canopyPhase*10;
+                        groundShadow.setAttribute('rx', rx.toFixed(2));
+                        groundShadow.setAttribute('opacity', (0.05 + canopyPhase*0.25).toFixed(2));
+                    }
                 },
                 animateTo(target){
                     const targetP = clamp(target,0,1);
