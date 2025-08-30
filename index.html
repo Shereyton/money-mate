@@ -355,6 +355,10 @@
             box-shadow: 0 6px 16px rgba(0,0,0,0.12);
         }
 
+        /* Link-styled button for subtle actions */
+        .text-btn { background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; padding: 0; margin: 4px 0 0; }
+        .text-btn:hover { text-decoration: underline; }
+
         .expense-category {
             display: inline-block;
             padding: 4px 12px;
@@ -735,8 +739,13 @@
                         <option value="Shopping">🛍️ Shopping</option>
                         <option value="Other">📦 Other</option>
                     </select>
+                    <button type="button" id="toggleCustomCategory" class="text-btn">or name your own</button>
                 </div>
                 <button class="btn" onclick="addExpense(event)">Add Expense</button>
+            </div>
+            <div class="input-group" id="customCategoryGroup" style="display:none; margin-top:10px;">
+                <label for="expenseCategoryCustom">Custom Category</label>
+                <input type="text" id="expenseCategoryCustom" placeholder="Enter a category name">
             </div>
             
             <div class="chip-group" id="filterChips"></div>
@@ -998,12 +1007,18 @@
             saveData();
         }
 
-        // Add expense function (simplified: choose from categories only)
+        // Add expense function (default dropdown, optional custom name)
         function addExpense(ev) {
             const nameEl = document.getElementById('expenseName');
             const name = (nameEl?.value || '').trim();
             const amount = parseFloat(document.getElementById('expenseAmount').value);
-            const category = document.getElementById('expenseCategory').value;
+            const catSel = document.getElementById('expenseCategory');
+            let category = catSel.value;
+            const customGroup = document.getElementById('customCategoryGroup');
+            const customEl = document.getElementById('expenseCategoryCustom');
+            const customVisible = customGroup && customGroup.style.display !== 'none';
+            const customValue = (customEl?.value || '').trim();
+            if (customVisible && customValue) category = customValue;
 
             if (!name) {
                 shake('#expenseName');
@@ -1015,7 +1030,7 @@
                 showToast('Enter a valid expense amount', 'error');
                 return;
             }
-            // Category is always selected from dropdown
+            // Category comes from dropdown by default; uses custom if provided
 
             const expense = {
                 id: Date.now(),
@@ -1040,7 +1055,9 @@
             document.getElementById('expenseAmount').value = '';
             const catSel = document.getElementById('expenseCategory');
             if (catSel) catSel.value = 'Other';
-            
+            // Reset any custom UI
+            if (customEl) customEl.value = '';
+            if (customGroup) customGroup.style.display = 'none';
             
             updateDisplay();
             renderExpenses();
@@ -1080,7 +1097,7 @@
             }
         }
 
-        // Edit and save expenses
+        // Edit and save expenses (default dropdown, optional custom name)
         function editExpense(id) {
             const expense = financialData.expenses.find(e => e.id === id);
             if (!expense) return;
@@ -1089,6 +1106,7 @@
             if (!item) return;
             const defaultCats = ['Housing','Food','Transport','Utilities','Entertainment','Healthcare','Shopping','Other'];
             const uniqueCats = Array.from(new Set([...defaultCats, ...Object.keys(financialData.categories)]));
+            const inList = uniqueCats.includes(expense.category);
             const options = uniqueCats.map(cat => `<option value="${cat}" ${cat===expense.category?'selected':''}>${cat}</option>`).join('');
             item.innerHTML = `
                 <div style="display:flex; gap:8px; align-items:center; width:100%;">
@@ -1103,6 +1121,11 @@
                     <div class="input-group" style="margin:0; flex: 1 1 160px;">
                         <label style="font-size:.8rem;">Category</label>
                         <select id="editExpenseCategory_${id}">${options}</select>
+                        <button type="button" id="editToggleCustom_${id}" class="text-btn">or name your own</button>
+                    </div>
+                    <div class="input-group" id="editCustomGroup_${id}" style="margin:0; flex: 1 1 160px; ${inList?'display:none;':''}">
+                        <label style="font-size:.8rem;">Custom Category</label>
+                        <input type="text" id="editExpenseCategoryCustom_${id}" value="${inList ? '' : expense.category.replace(/"/g,'&quot;')}" />
                     </div>
                     <div style="display:flex; gap:8px; align-items:end;">
                         <button class="btn" style="padding:6px 12px;" onclick="saveExpenseEdit(${id})">Save</button>
@@ -1110,6 +1133,14 @@
                     </div>
                 </div>
             `;
+            const toggle = document.getElementById(`editToggleCustom_${id}`);
+            const grp = document.getElementById(`editCustomGroup_${id}`);
+            toggle?.addEventListener('click', ()=>{
+                if (!grp) return;
+                const showing = grp.style.display !== 'none';
+                grp.style.display = showing ? 'none' : '';
+                if (!showing) document.getElementById(`editExpenseCategoryCustom_${id}`)?.focus();
+            });
         }
 
         function saveExpenseEdit(id) {
@@ -1118,12 +1149,14 @@
             const nameEl = document.getElementById(`editExpenseName_${id}`);
             const amtEl = document.getElementById(`editExpenseAmount_${id}`);
             const catEl = document.getElementById(`editExpenseCategory_${id}`);
+            const customGrp = document.getElementById(`editCustomGroup_${id}`);
+            const customEl = document.getElementById(`editExpenseCategoryCustom_${id}`);
             const newName = (nameEl?.value || '').trim();
             const newAmount = parseFloat(amtEl?.value);
-            let newCategory = catEl?.value;
+            let newCategory = (customGrp && customGrp.style.display !== 'none' && (customEl?.value || '').trim()) || catEl?.value;
             if (!newName) { showToast('Enter a name', 'error'); return; }
             if (isNaN(newAmount) || newAmount <= 0) { showToast('Enter a valid amount', 'error'); return; }
-            if (!newCategory) { showToast('Select a category', 'error'); return; }
+            if (!newCategory) { showToast('Enter a category', 'error'); return; }
 
             const oldAmount = parseFloat(expense.amount) || 0;
             const oldCategory = String(expense.category || 'Other');
@@ -1552,7 +1585,16 @@
         if (setBalanceBtn) setBalanceBtn.addEventListener('click', setBalanceFromInput);
         if (balanceInput) balanceInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setBalanceFromInput(); });
         updateBalanceClass();
-        // Simplified category selection: no custom input toggle
+        // Add Expense: toggle custom category input visibility via link
+        const toggleCustomBtn = document.getElementById('toggleCustomCategory');
+        const customCatGroup = document.getElementById('customCategoryGroup');
+        if (toggleCustomBtn && customCatGroup) {
+            toggleCustomBtn.addEventListener('click', () => {
+                const showing = customCatGroup.style.display !== 'none';
+                customCatGroup.style.display = showing ? 'none' : '';
+                if (!showing) document.getElementById('expenseCategoryCustom')?.focus();
+            });
+        }
         // Gauge setup
         const gaugeCanvas = document.getElementById('balanceCanvas');
         const gaugeCtx = gaugeCanvas.getContext('2d');
