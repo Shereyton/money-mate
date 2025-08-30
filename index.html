@@ -1009,42 +1009,44 @@
                         <feBlend in="SourceGraphic" in2="alpha" mode="multiply"/>
                       </filter>
                     </defs>
-                    <!-- Ground shadow under canopy -->
-                    <ellipse id="groundShadow" cx="50" cy="86.5" rx="4" ry="1.6" opacity="0" />
-                    <!-- Seed -->
-                    <g id="seed" class="fade-in">
-                      <circle cx="50" cy="84" r="3.6"></circle>
-                      <ellipse cx="50" cy="86.2" rx="6" ry="1.8" fill="rgba(0,0,0,.08)"/>
-                    </g>
-                    <!-- Sprout -->
-                    <g id="sprout">
-                      <path id="sproutStem" class="trunk" d="M50,84 L50,84" stroke-width="1.6" stroke-linecap="round" fill="none"/>
-                      <path id="sproutLeaf" class="leafFill" d="M50,82 C51,81.6 52,81.2 52,80.6 C52,80 51,80 50,80.4 C49,80.8 48,81.2 48,81.8 C48,82.4 49,82.4 50,82 Z" opacity="0"/>
-                    </g>
-                    <!-- Trunk (filled shape) -->
-                    <path id="trunkFill" class="trunkFill" d="M48,84 L52,84 L52,84 L48,84 Z"/>
-                    <!-- Branches -->
-                    <g id="branches" stroke-linecap="round" fill="none" opacity="0">
-                      <path id="b1" class="branch" d="M50,74 C48,72 46,70 44,68" stroke-width="2.2"/>
-                      <path id="b2" class="branch" d="M50,70 C52,68 54,66 56,64" stroke-width="2.0"/>
-                      <path id="b3" class="branch" d="M50,65 C48,63 46,61 44,59" stroke-width="1.9"/>
-                      <path id="b4" class="branch" d="M50,61 C52,59 54,57 56,55" stroke-width="1.7"/>
-                    </g>
-                    <!-- Canopy -->
-                    <g id="canopy" opacity="0">
-                      <circle id="c1" class="leafFill"  cx="50" cy="56" r="0"/>
-                      <circle id="c2" class="leafFill"  cx="43" cy="58" r="0"/>
-                      <circle id="c3" class="leafFill"  cx="57" cy="58" r="0"/>
-                      <circle id="c4" class="leafShade" cx="46" cy="52" r="0"/>
-                      <circle id="c5" class="leafShade" cx="54" cy="52" r="0"/>
-                      <circle id="c6" class="leafFill"  cx="39" cy="55" r="0"/>
-                      <circle id="c7" class="leafFill"  cx="61" cy="55" r="0"/>
-                      <circle id="c8" class="leafShade" cx="45" cy="60" r="0"/>
-                      <circle id="c9" class="leafShade" cx="55" cy="60" r="0"/>
-                    </g>
-                    <!-- Top highlight -->
-                    <g id="shine" opacity="0">
-                      <circle cx="47" cy="53" r="10" fill="rgba(255,255,255,.12)"/>
+                    <g id="treeGroup">
+                      <!-- Ground shadow under canopy -->
+                      <ellipse id="groundShadow" cx="50" cy="86.5" rx="4" ry="1.6" opacity="0" />
+                      <!-- Seed -->
+                      <g id="seed" class="fade-in">
+                        <circle cx="50" cy="84" r="3.6"></circle>
+                        <ellipse cx="50" cy="86.2" rx="6" ry="1.8" fill="rgba(0,0,0,.08)"/>
+                      </g>
+                      <!-- Sprout -->
+                      <g id="sprout">
+                        <path id="sproutStem" class="trunk" d="M50,84 L50,84" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+                        <path id="sproutLeaf" class="leafFill" d="M50,82 C51,81.6 52,81.2 52,80.6 C52,80 51,80 50,80.4 C49,80.8 48,81.2 48,81.8 C48,82.4 49,82.4 50,82 Z" opacity="0"/>
+                      </g>
+                      <!-- Trunk (filled shape) -->
+                      <path id="trunkFill" class="trunkFill" d="M48,84 L52,84 L52,84 L48,84 Z"/>
+                      <!-- Branches -->
+                      <g id="branches" stroke-linecap="round" fill="none" opacity="0">
+                        <path id="b1" class="branch" d="M50,74 C48,72 46,70 44,68" stroke-width="2.2"/>
+                        <path id="b2" class="branch" d="M50,70 C52,68 54,66 56,64" stroke-width="2.0"/>
+                        <path id="b3" class="branch" d="M50,65 C48,63 46,61 44,59" stroke-width="1.9"/>
+                        <path id="b4" class="branch" d="M50,61 C52,59 54,57 56,55" stroke-width="1.7"/>
+                      </g>
+                      <!-- Canopy -->
+                      <g id="canopy" opacity="0">
+                        <circle id="c1" class="leafFill"  cx="50" cy="56" r="0"/>
+                        <circle id="c2" class="leafFill"  cx="43" cy="58" r="0"/>
+                        <circle id="c3" class="leafFill"  cx="57" cy="58" r="0"/>
+                        <circle id="c4" class="leafShade" cx="46" cy="52" r="0"/>
+                        <circle id="c5" class="leafShade" cx="54" cy="52" r="0"/>
+                        <circle id="c6" class="leafFill"  cx="39" cy="55" r="0"/>
+                        <circle id="c7" class="leafFill"  cx="61" cy="55" r="0"/>
+                        <circle id="c8" class="leafShade" cx="45" cy="60" r="0"/>
+                        <circle id="c9" class="leafShade" cx="55" cy="60" r="0"/>
+                      </g>
+                      <!-- Top highlight -->
+                      <g id="shine" opacity="0">
+                        <circle cx="47" cy="53" r="10" fill="rgba(255,255,255,.12)"/>
+                      </g>
                     </g>
                   </svg>
                 </div>
@@ -2172,11 +2174,15 @@
             const shine = treeWrap.querySelector('#shine');
             const canopyCircles = Array.from(canopy.querySelectorAll('circle'));
             const groundShadow = treeWrap.querySelector('#groundShadow');
+            const treeGroup = treeWrap.querySelector('#treeGroup');
             const ease = (t)=> t<0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
             const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
             ST = { progress:0, raf:0, start:0, from:0, to:0,
                 updateVisual(p){
                     ST.progress = clamp(p,0,1);
+                    // overall growth scale around base (50,84)
+                    const gs = 0.85 + ST.progress * 0.35; // 0.85..1.20
+                    if (treeGroup) treeGroup.setAttribute('transform', `translate(50 84) scale(${gs.toFixed(3)}) translate(-50 -84)`);
                     // seed fades
                     const seedScale = 1 - ST.progress*1.1; if (seed) seed.style.opacity = String(clamp(seedScale,0,1));
                     // sprout phase (0..0.25)
@@ -2186,9 +2192,9 @@
                     if (sproutLeaf) sproutLeaf.setAttribute('opacity', String(sprPhase));
                     // trunk tapered fill
                     const trunkPhase = clamp((ST.progress - 0.15) / 0.75, 0, 1);
-                    const topY = 84 - trunkPhase*28;
-                    const baseHalf = 2.2 + trunkPhase*2.0;
-                    const topHalf  = 0.9 + trunkPhase*0.9;
+                    const topY = 84 - trunkPhase*36; // taller trunk
+                    const baseHalf = 2.4 + trunkPhase*2.6; // thicker base
+                    const topHalf  = 1.0 + trunkPhase*1.1; // wider top
                     const leftTop  = (50 - topHalf).toFixed(2);
                     const rightTop = (50 + topHalf).toFixed(2);
                     const leftBase = (50 - baseHalf).toFixed(2);
@@ -2234,10 +2240,12 @@
                     const targetP = clamp(target,0,1);
                     if (ST.raf) cancelAnimationFrame(ST.raf);
                     ST.start = performance.now(); ST.from = ST.progress; ST.to = targetP;
-                    const dur = 900;
+                    const growing = targetP >= ST.from;
+                    const dur = growing ? 1100 : 850; // grow a bit slower than shrink
                     const step = (now)=>{
                         const t = Math.min(1, (now - ST.start)/dur);
-                        const p = ST.from + (ST.to - ST.from) * ease(t);
+                        const easeInOut = ease(t);
+                        const p = ST.from + (ST.to - ST.from) * easeInOut;
                         ST.updateVisual(p);
                         if (t<1) ST.raf = requestAnimationFrame(step); else ST.raf = 0;
                     };
