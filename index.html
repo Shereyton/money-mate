@@ -2181,7 +2181,7 @@
                 updateVisual(p){
                     ST.progress = clamp(p,0,1);
                     // overall growth scale around base (50,84)
-                    const gs = 0.85 + ST.progress * 0.35; // 0.85..1.20
+                    const gs = 0.80 + ST.progress * 0.50; // 0.80..1.30 (taller overall)
                     if (treeGroup) treeGroup.setAttribute('transform', `translate(50 84) scale(${gs.toFixed(3)}) translate(-50 -84)`);
                     // seed fades
                     const seedScale = 1 - ST.progress*1.1; if (seed) seed.style.opacity = String(clamp(seedScale,0,1));
@@ -2192,9 +2192,9 @@
                     if (sproutLeaf) sproutLeaf.setAttribute('opacity', String(sprPhase));
                     // trunk tapered fill
                     const trunkPhase = clamp((ST.progress - 0.15) / 0.75, 0, 1);
-                    const topY = 84 - trunkPhase*36; // taller trunk
-                    const baseHalf = 2.4 + trunkPhase*2.6; // thicker base
-                    const topHalf  = 1.0 + trunkPhase*1.1; // wider top
+                    const topY = 84 - trunkPhase*44; // even taller trunk
+                    const baseHalf = 2.6 + trunkPhase*3.1; // thicker base
+                    const topHalf  = 1.1 + trunkPhase*1.4; // wider top
                     const leftTop  = (50 - topHalf).toFixed(2);
                     const rightTop = (50 + topHalf).toFixed(2);
                     const leftBase = (50 - baseHalf).toFixed(2);
@@ -2214,7 +2214,7 @@
                     const canopyPhase = clamp((ST.progress - 0.25)/0.75, 0, 1);
                     if (canopy) canopy.setAttribute('opacity', String(canopyPhase));
                     if (shine) shine.setAttribute('opacity', String(canopyPhase*0.7));
-                    const baseR = 4 + canopyPhase*12; // fuller crown
+                    const baseR = 5 + canopyPhase*14; // fuller, larger crown
                     const settle = 1 + Math.sin(performance.now()/350)*0.02*(1 - (1-canopyPhase));
                     const jitter = [1.00, 0.92, 0.95, 0.88, 0.90, 1.05, 1.03, 0.97, 0.96];
                     canopyCircles.forEach((c,i)=>{
@@ -2231,7 +2231,7 @@
                     });
                     // ground shadow
                     if (groundShadow) {
-                        const rx = 4 + canopyPhase*10;
+                        const rx = 5 + canopyPhase*14;
                         groundShadow.setAttribute('rx', rx.toFixed(2));
                         groundShadow.setAttribute('opacity', (0.05 + canopyPhase*0.25).toFixed(2));
                     }
@@ -2241,10 +2241,11 @@
                     if (ST.raf) cancelAnimationFrame(ST.raf);
                     ST.start = performance.now(); ST.from = ST.progress; ST.to = targetP;
                     const growing = targetP >= ST.from;
-                    const dur = growing ? 1100 : 850; // grow a bit slower than shrink
+                    const dur = growing ? 1200 : 950; // grow a touch slower; shrink slightly snappier
                     const step = (now)=>{
                         const t = Math.min(1, (now - ST.start)/dur);
-                        const easeInOut = ease(t);
+                        // Smooth sine ease for seamless motion
+                        const easeInOut = (1 - Math.cos(Math.PI * t)) / 2;
                         const p = ST.from + (ST.to - ST.from) * easeInOut;
                         ST.updateVisual(p);
                         if (t<1) ST.raf = requestAnimationFrame(step); else ST.raf = 0;
