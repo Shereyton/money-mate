@@ -492,6 +492,20 @@
             .form-row .btn { width: 100%; }
         }
 
+        /* Edit row (original inline layout) */
+        .expense-item .edit-inline { display: flex; gap: 8px; align-items: center; width: 100%; }
+        .expense-item .input-group { min-width: 0; }
+        .expense-item .input-group input,
+        .expense-item .input-group select { width: 100%; }
+        .expense-item .actions { display: flex; gap: 8px; align-items: center; }
+        @media (max-width: 640px) {
+            .expense-item .edit-inline { flex-wrap: wrap; }
+            .expense-item .input-group { flex: 1 1 100% !important; }
+            .expense-item .actions { width: 100%; }
+            .expense-item .actions .btn,
+            .expense-item .actions .delete-btn { flex: 1 1 auto; }
+        }
+
         /* Sleek theme extras */
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
@@ -1108,7 +1122,7 @@
             const inList = uniqueCats.includes(expense.category);
             const options = uniqueCats.map(cat => `<option value="${cat}" ${cat===expense.category?'selected':''}>${cat}</option>`).join('');
             item.innerHTML = `
-                <div style="display:flex; gap:8px; align-items:center; width:100%;">
+                <div class="edit-inline">
                     <div class="input-group" style="margin:0; flex: 2 1 200px;">
                         <label style="font-size:.8rem;">Name</label>
                         <input type="text" id="editExpenseName_${id}" value="${(expense.name||'').replace(/"/g,'&quot;')}" />
@@ -1126,7 +1140,7 @@
                         <label style="font-size:.8rem;">Custom Category</label>
                         <input type="text" id="editExpenseCategoryCustom_${id}" value="${inList ? '' : expense.category.replace(/"/g,'&quot;')}" />
                     </div>
-                    <div style="display:flex; gap:8px; align-items:end;">
+                    <div class="actions">
                         <button class="btn" style="padding:6px 12px;" onclick="saveExpenseEdit(${id})">Save</button>
                         <button class="delete-btn" style="padding:6px 12px;" onclick="renderExpenses(); renderFilterChips();">Cancel</button>
                     </div>
