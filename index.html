@@ -385,7 +385,12 @@
         /* Growing Tree (Savings) */
         .tree-card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .tree-wrap { position: relative; display: grid; place-items: center; }
-        #treeCanvas { width: 100%; max-width: 420px; height: auto; display: block; }
+        /* SVG-based tree container */
+        .savings-tree-wrap{ width:100%; max-width:520px; aspect-ratio:16/9; position:relative; border-radius:16px; overflow:hidden; background: linear-gradient(#bfe8ff, color-mix(in srgb, var(--surface) 50%, #eaf6ff)); box-shadow: 0 12px 28px rgba(0,0,0,.12); }
+        .savings-tree-wrap .soil{ position:absolute; left:0; right:0; bottom:0; height:26%; background: linear-gradient(#9a6a49, color-mix(in srgb, var(--text) 20%, #8b5a3c)); }
+        .savings-tree-wrap svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+        .savings-tree-wrap .fade-in{ animation: fadeIn .5s ease-out both; }
+        @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
         .tree-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 10px; }
         .tree-kpis .k { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
         .tree-kpis .k .label { color: var(--muted); font-weight: 700; font-size: .85rem; }
@@ -911,7 +916,36 @@
         <div class="input-section tree-card" id="savingsSection">
             <h2 style="margin-bottom: 10px; color: var(--text);">Growing Tree — Savings</h2>
             <div class="tree-wrap">
-                <canvas id="treeCanvas" width="420" height="240"></canvas>
+                <div class="savings-tree-wrap" id="SavingsTree">
+                  <div class="soil"></div>
+                  <svg viewBox="0 0 100 100" aria-label="Savings growth tree">
+                    <g id="seed" class="fade-in">
+                      <circle cx="50" cy="84" r="3.6" fill="currentColor"></circle>
+                      <ellipse cx="50" cy="86.2" rx="6" ry="1.8" fill="rgba(0,0,0,.08)"></ellipse>
+                    </g>
+                    <g id="sprout">
+                      <path id="sproutStem" d="M50,84 L50,84" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+                      <path id="sproutLeaf" d="M50,82 C51,81.6 52,81.2 52,80.6 C52,80 51,80 50,80.4 C49,80.8 48,81.2 48,81.8 C48,82.4 49,82.4 50,82 Z" fill="currentColor" opacity="0"/>
+                    </g>
+                    <path id="trunk" d="M50,84 L50,84" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+                    <g id="branches" stroke="currentColor" stroke-linecap="round" fill="none" opacity="0">
+                      <path id="b1" d="M50,74 C48,72 46,70 44,68" stroke-width="2.2"/>
+                      <path id="b2" d="M50,70 C52,68 54,66 56,64" stroke-width="2.0"/>
+                      <path id="b3" d="M50,65 C48,63 46,61 44,59" stroke-width="1.9"/>
+                      <path id="b4" d="M50,61 C52,59 54,57 56,55" stroke-width="1.7"/>
+                    </g>
+                    <g id="canopy" opacity="0">
+                      <circle id="c1" cx="50" cy="56" r="0" fill="currentColor"/>
+                      <circle id="c2" cx="43" cy="58" r="0" fill="currentColor"/>
+                      <circle id="c3" cx="57" cy="58" r="0" fill="currentColor"/>
+                      <circle id="c4" cx="46" cy="52" r="0" fill="currentColor"/>
+                      <circle id="c5" cx="54" cy="52" r="0" fill="currentColor"/>
+                    </g>
+                    <g id="shine" opacity="0">
+                      <circle cx="47" cy="53" r="10" fill="rgba(255,255,255,.12)"/>
+                    </g>
+                  </svg>
+                </div>
             </div>
             <div class="tree-kpis">
                 <div class="k"><div class="label">Saved</div><div class="value" id="savedNow">$0.00</div></div>
@@ -2007,14 +2041,13 @@
             updateAdvisor();
         })();
 
-        // Savings (Growing Tree) logic
-        const treeCanvas = document.getElementById('treeCanvas');
+        // Savings Tree (SVG) logic + integration
         const savingsGoalBtn = document.getElementById('setSavingsGoalBtn');
         const goalInput = document.getElementById('savingsGoalInput');
         const amtInput = document.getElementById('savingsAmountInput');
         const depositBtn = document.getElementById('depositSavingsBtn');
         const withdrawBtn = document.getElementById('withdrawSavingsBtn');
-
+        const treeWrap = document.getElementById('SavingsTree');
         function fmtMoney(n){ return '$' + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
         function savingsPercent(){ const g = parseFloat(financialData.savingsGoal)||0; const s = parseFloat(financialData.savings)||0; if(!g) return 0; return Math.max(0, Math.min(100, (s/g)*100)); }
         function refreshTreeKPIs(){
@@ -2025,74 +2058,78 @@
             const b = document.getElementById('savedGoal'); if (b) b.textContent = fmtMoney(g);
             const c = document.getElementById('savedPct'); if (c) c.textContent = Math.round(pct) + '%';
         }
-        function drawTree(){
-            if (!treeCanvas) return;
-            const ctx = treeCanvas.getContext('2d');
-            const W = treeCanvas.width, H = treeCanvas.height;
-            const dpr = window.devicePixelRatio || 1;
-            if (treeCanvas._scaled !== dpr) { treeCanvas.width = Math.round(W*dpr); treeCanvas.height = Math.round(H*dpr); treeCanvas.style.width = W+'px'; treeCanvas.style.height = H+'px'; treeCanvas._scaled = dpr; }
-            const w = treeCanvas.width, h = treeCanvas.height;
-            ctx.clearRect(0,0,w,h);
-            ctx.save(); ctx.scale(dpr, dpr);
-
-            const groundY = H*0.62;
-            // background
-            ctx.fillStyle = getCssVar('--surface') || '#f9fafb';
-            ctx.fillRect(0,0,W,H);
-            // ground
-            ctx.fillStyle = hexToRgba(getCssVar('--primary')||'#667eea', 0.12);
-            ctx.fillRect(0, groundY, W, H-groundY);
-            ctx.strokeStyle = hexToRgba(getCssVar('--text')||'#374151', 0.2);
-            ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
-
-            const pct = savingsPercent();
-            const centerX = W/2;
-            // seed below ground (visible when pct ~ 0)
-            const seedY = groundY + 14;
-            const seedR = 6;
-            ctx.fillStyle = hexToRgba(getCssVar('--danger')||'#ef4444', 0.8);
-            ctx.beginPath(); ctx.arc(centerX, seedY, seedR, 0, Math.PI*2); ctx.fill();
-
-            // trunk height maps from 0..100% to 0..H*0.45
-            const maxTrunk = H*0.45;
-            const trunkH = (pct/100) * maxTrunk;
-            if (trunkH > 2) {
-                ctx.strokeStyle = getCssVar('--text') || '#374151';
-                ctx.lineWidth = 6; ctx.lineCap = 'round';
-                ctx.beginPath(); ctx.moveTo(centerX, groundY); ctx.lineTo(centerX, groundY - trunkH); ctx.stroke();
-                // branches
-                const levels = Math.max(1, Math.floor(pct/25));
-                ctx.lineWidth = 4;
-                for (let i=1; i<=levels; i++) {
-                    const y = groundY - (trunkH * (i/(levels+0.5)));
-                    const offset = 22 + i*3;
-                    ctx.beginPath(); ctx.moveTo(centerX, y); ctx.lineTo(centerX - offset, y - 6); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(centerX, y); ctx.lineTo(centerX + offset, y - 6); ctx.stroke();
+        let ST = null; // internal tree state
+        function initSavingsTree(){
+            if (!treeWrap) return;
+            const seed = treeWrap.querySelector('#seed');
+            const sproutStem = treeWrap.querySelector('#sproutStem');
+            const sproutLeaf = treeWrap.querySelector('#sproutLeaf');
+            const trunk = treeWrap.querySelector('#trunk');
+            const branches = treeWrap.querySelector('#branches');
+            const canopy = treeWrap.querySelector('#canopy');
+            const shine = treeWrap.querySelector('#shine');
+            const canopyCircles = Array.from(canopy.querySelectorAll('circle'));
+            const ease = (t)=> t<0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+            const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+            ST = { progress:0, raf:0, start:0, from:0, to:0,
+                updateVisual(p){
+                    ST.progress = clamp(p,0,1);
+                    // choose theme-aware colors
+                    const trunkColor = getCssVar('--text') || '#374151';
+                    const leafColor = getCssVar('--success') || '#10b981';
+                    [trunk, sproutStem, branches].forEach(el=>{ if (el) el.setAttribute('stroke', trunkColor); });
+                    if (sproutLeaf) sproutLeaf.setAttribute('fill', leafColor);
+                    canopyCircles.forEach(c=> c.setAttribute('fill', leafColor));
+                    // seed fades
+                    const seedScale = 1 - ST.progress*1.1; if (seed) seed.style.opacity = String(clamp(seedScale,0,1));
+                    // sprout phase (0..0.25)
+                    const sprPhase = clamp(ST.progress/0.25, 0, 1);
+                    const sprHeight = 84 - sprPhase*10;
+                    if (sproutStem) sproutStem.setAttribute('d', `M50,84 L50,${sprHeight.toFixed(2)}`);
+                    if (sproutLeaf) sproutLeaf.setAttribute('opacity', String(sprPhase));
+                    // trunk
+                    const trunkPhase = clamp((ST.progress - 0.15) / 0.75, 0, 1);
+                    const topY = 84 - trunkPhase*28;
+                    if (trunk) trunk.setAttribute('d', `M50,84 L50,${topY.toFixed(2)}`);
+                    // branches
+                    if (branches) branches.setAttribute('opacity', String(clamp((ST.progress - 0.35)/0.25, 0, 1)));
+                    // canopy
+                    const canopyPhase = clamp((ST.progress - 0.25)/0.75, 0, 1);
+                    if (canopy) canopy.setAttribute('opacity', String(canopyPhase));
+                    if (shine) shine.setAttribute('opacity', String(canopyPhase*0.7));
+                    const baseR = 3 + canopyPhase*11;
+                    const settle = 1 + Math.sin(performance.now()/350)*0.02*(1 - (1-canopyPhase));
+                    canopyCircles.forEach((c,i)=>{ c.setAttribute('r', (baseR * (1 - i*0.06) * settle).toFixed(2)); });
+                },
+                animateTo(target){
+                    const targetP = clamp(target,0,1);
+                    if (ST.raf) cancelAnimationFrame(ST.raf);
+                    ST.start = performance.now(); ST.from = ST.progress; ST.to = targetP;
+                    const dur = 900;
+                    const step = (now)=>{
+                        const t = Math.min(1, (now - ST.start)/dur);
+                        const p = ST.from + (ST.to - ST.from) * ease(t);
+                        ST.updateVisual(p);
+                        if (t<1) ST.raf = requestAnimationFrame(step); else ST.raf = 0;
+                    };
+                    ST.raf = requestAnimationFrame(step);
                 }
-                // canopy size grows with pct
-                const canopyR = 14 + (pct/100) * 28;
-                const canopyY = groundY - trunkH - (canopyR*0.2);
-                ctx.fillStyle = hexToRgba(getCssVar('--success')||'#10b981', 0.85);
-                ctx.beginPath(); ctx.arc(centerX - canopyR*0.6, canopyY, canopyR*0.9, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(centerX + canopyR*0.6, canopyY, canopyR, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(centerX, canopyY + canopyR*0.2, canopyR*1.05, 0, Math.PI*2); ctx.fill();
-            } else {
-                // tiny sprout above ground for small progress
-                if (pct > 0) {
-                    ctx.strokeStyle = getCssVar('--text') || '#374151';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath(); ctx.moveTo(centerX, groundY); ctx.lineTo(centerX, groundY - 8); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(centerX, groundY - 6); ctx.lineTo(centerX + 8, groundY - 10); ctx.stroke();
-                }
-            }
-            ctx.restore();
+            };
+            // initial draw
+            ST.updateVisual(0);
         }
-        function refreshTree(){ refreshTreeKPIs(); drawTree(); }
-
+        function refreshSavingsTree(immediate){
+            refreshTreeKPIs();
+            if (!ST) return;
+            const g = parseFloat(financialData.savingsGoal)||0;
+            const s = parseFloat(financialData.savings)||0;
+            const p = g>0 ? s/g : 0;
+            if (immediate) ST.updateVisual(p); else ST.animateTo(p);
+        }
         function setSavingsGoal(){
             const v = parseFloat(goalInput?.value);
             if (isNaN(v) || v <= 0) { showToast('Enter a valid savings goal', 'error'); return; }
-            financialData.savingsGoal = v; saveData(); refreshTree(); showToast('Savings goal set','success');
+            financialData.savingsGoal = v; saveData(); refreshSavingsTree(true); showToast('Savings goal set','success');
         }
         function depositSavings(){
             const amt = parseFloat(amtInput?.value);
@@ -2104,7 +2141,7 @@
             const bInput = document.getElementById('balanceInput'); if (bInput) bInput.value = String(financialData.balance.toFixed(2));
             animateValue('balanceDisplay', financialData.balance);
             updateBalanceClass();
-            saveData(); refreshTree(); updateAdvisor(); showToast('Deposited to savings','success');
+            saveData(); refreshSavingsTree(false); updateAdvisor(); showToast('Deposited to savings','success');
         }
         function withdrawSavings(){
             const amt = parseFloat(amtInput?.value);
@@ -2116,15 +2153,15 @@
             const bInput = document.getElementById('balanceInput'); if (bInput) bInput.value = String(financialData.balance.toFixed(2));
             animateValue('balanceDisplay', financialData.balance);
             updateBalanceClass();
-            saveData(); refreshTree(); updateAdvisor(); showToast('Withdrew from savings','warn');
+            saveData(); refreshSavingsTree(false); updateAdvisor(); showToast('Withdrew from savings','warn');
         }
-
+        if (goalInput) goalInput.value = String((parseFloat(financialData.savingsGoal)||0).toFixed(2));
         if (savingsGoalBtn) savingsGoalBtn.addEventListener('click', setSavingsGoal);
         if (goalInput) goalInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setSavingsGoal(); });
         if (depositBtn) depositBtn.addEventListener('click', depositSavings);
         if (withdrawBtn) withdrawBtn.addEventListener('click', withdrawSavings);
-        if (goalInput) goalInput.value = String((parseFloat(financialData.savingsGoal)||0).toFixed(2));
-        refreshTree();
+        initSavingsTree();
+        refreshSavingsTree(true);
 
         function renderPlanned(){
             const list = document.getElementById('plannedList');
