@@ -2389,15 +2389,14 @@
 
             function updatePayUi(){
                 const cyc = (cycleEl?.value||'month');
-                if (cyc === 'paycheck') {
-                    if (rowNextPay) rowNextPay.style.display = '';
-                    if (rowCycleFreq) rowCycleFreq.style.display = 'none';
-                    if (rowAnchorMonthly) rowAnchorMonthly.style.display = 'none';
-                } else {
-                    if (rowNextPay) rowNextPay.style.display = 'none';
-                    if (rowCycleFreq) rowCycleFreq.style.display = 'none';
-                    if (rowAnchorMonthly) rowAnchorMonthly.style.display = 'none';
-                }
+                // Always show the row with the Budget period selector
+                if (rowCycleFreq) rowCycleFreq.style.display = '';
+                // Hide complex schedule controls to keep UI simple
+                const freqGroup = freqEl?.closest && freqEl.closest('.input-group');
+                if (freqGroup) freqGroup.style.display = 'none';
+                if (rowAnchorMonthly) rowAnchorMonthly.style.display = 'none';
+                // Toggle the simple Next Payday picker when in paycheck mode
+                if (rowNextPay) rowNextPay.style.display = (cyc === 'paycheck') ? '' : 'none';
             }
             updatePayUi();
             function setReserve(){
