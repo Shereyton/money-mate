@@ -414,6 +414,10 @@
             linear-gradient(to top, var(--soil-deep), var(--soil-mid) 55%, var(--soil-top));
         }
         .savings-tree-wrap svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+        /* Prefer crisp edges on SVG to avoid AA halo along vertical edges */
+        .tree-svg { shape-rendering: crispEdges; }
+        .tree-svg #trunk, .tree-svg #trunk * { stroke: none !important; filter: none !important; }
+        .tree-svg #trunkFill { stroke: none !important; filter: none !important; }
         .savings-tree-wrap .fade-in{ animation: fadeIn .5s ease-out both; }
         @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
         /* Bind SVG parts to realistic gradients/filters */
@@ -981,7 +985,7 @@
             <div class="tree-wrap">
                 <div class="savings-tree-wrap" id="SavingsTree">
                   <div class="soil"></div>
-                  <svg viewBox="0 0 100 100" aria-label="Savings growth tree">
+                  <svg class="tree-svg" viewBox="0 0 100 100" aria-label="Savings growth tree">
                     <!-- Realistic paints & filters -->
                     <defs>
                       <!-- Clip to keep trunk strictly above ground line (y=84) -->
@@ -1030,15 +1034,15 @@
                         <path id="sproutStem" class="trunk" d="M50,84 L50,84" stroke-width="1.6" stroke-linecap="round" fill="none"/>
                         <path id="sproutLeaf" class="leafFill" d="M50,82 C51,81.6 52,81.2 52,80.6 C52,80 51,80 50,80.4 C49,80.8 48,81.2 48,81.8 C48,82.4 49,82.4 50,82 Z" opacity="0"/>
                       </g>
-                      <!-- Trunk (filled shape) -->
-                      <path id="trunkFill" class="trunkFill" d="M48,84 L52,84 L52,84 L48,84 Z" clip-path="url(#aboveGroundClip)"/>
-                      <!-- Branches -->
+                      <!-- Branches (drawn before trunk so trunk overlays edges) -->
                       <g id="branches" stroke-linecap="round" fill="none" opacity="0">
                         <path id="b1" class="branch" d="M50,74 C48,72 46,70 44,68" stroke-width="2.2"/>
                         <path id="b2" class="branch" d="M50,70 C52,68 54,66 56,64" stroke-width="2.0"/>
                         <path id="b3" class="branch" d="M50,65 C48,63 46,61 44,59" stroke-width="1.9"/>
                         <path id="b4" class="branch" d="M50,61 C52,59 54,57 56,55" stroke-width="1.7"/>
                       </g>
+                      <!-- Trunk (filled shape overlays branches for clean edge) -->
+                      <path id="trunkFill" class="trunkFill" d="M48,84 L52,84 L52,84 L48,84 Z" clip-path="url(#aboveGroundClip)"/>
                       <!-- Canopy -->
                       <g id="canopy" opacity="0">
                         <circle id="c1" class="leafFill"  cx="50" cy="56" r="0"/>
