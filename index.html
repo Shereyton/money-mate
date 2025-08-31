@@ -948,44 +948,50 @@
             <h2 style="margin-bottom: 10px; color: var(--text);">Spending Advisor</h2>
             <div class="grid" style="margin-bottom: 8px;">
                 <div class="kpi">
-                    <div class="label">Safe To Spend Now</div>
+                    <div class="label" title="Money you can safely spend today">Safe To Spend Today</div>
                     <div class="value" id="kpiSafeNow">$0.00</div>
                 </div>
                 <div class="kpi">
-                    <div class="label">Per Day (to month end)</div>
+                    <div class="label" title="Safe amount per remaining day this month">Per Day</div>
                     <div class="value" id="kpiPerDay">$0.00</div>
                 </div>
                 <div class="kpi">
-                    <div class="label">Reserve</div>
+                    <div class="label" title="Safety cushion set aside so you don't overspend">Safety Cushion</div>
                     <div class="value" id="kpiReserve">$0.00</div>
                 </div>
                 <div class="kpi">
-                    <div class="label">Planned Upcoming</div>
+                    <div class="label" title="Bills you added below">Upcoming Bills</div>
                     <div class="value" id="kpiPlanned">$0.00</div>
                 </div>
             </div>
+            <div class="help-text" style="margin: 6px 0 8px;">Quick guide: We look at your balance, set aside a safety cushion, subtract upcoming bills (and typical spending for the rest of the month if enabled), and show what’s safe to spend.</div>
             <div class="controls">
                 <div class="input-group">
-                    <label for="reservePercent">Reserve for savings and buffer (%)</label>
+                    <label for="reservePercent">Safety cushion (%)</label>
                     <input type="number" id="reservePercent" min="0" max="90" step="1" placeholder="e.g., 20">
-                </div>
-                <div class="input-group">
-                    <label for="reserveBasis">Reserve basis</label>
-                    <select id="reserveBasis">
-                        <option value="balance">Balance</option>
-                        <option value="income">Income</option>
-                        <option value="both" selected>Balance + Income</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label for="useProjection">Use projected spend</label>
-                    <select id="useProjection">
-                        <option value="on" selected>On</option>
-                        <option value="off">Off</option>
-                    </select>
                 </div>
                 <button class="btn" id="applyReserveBtn">Apply</button>
             </div>
+            <details class="advisor-advanced" style="margin-top:8px;">
+                <summary style="cursor:pointer; font-weight:700; color:var(--text);">Advanced settings</summary>
+                <div class="form-row" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
+                    <div class="input-group">
+                        <label for="reserveBasis">Cushion based on</label>
+                        <select id="reserveBasis">
+                            <option value="balance">Balance</option>
+                            <option value="income">Income</option>
+                            <option value="both" selected>Balance + Income</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="useProjection">Account for usual spending</label>
+                        <select id="useProjection">
+                            <option value="on" selected>On</option>
+                            <option value="off">Off</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
             <div class="planned">
                 <h3 style="margin: 12px 0 8px; color: var(--text); font-size:1.1rem;">Planned Upcoming Expenses</h3>
                 <div class="form-row" style="grid-template-columns: 2fr 1fr auto;">
@@ -994,14 +1000,14 @@
                     <button class="btn" id="addPlannedBtn">Add Planned</button>
                 </div>
                 <div id="plannedList"></div>
-                <div class="help-text">Safe To Spend = Balance − Planned Upcoming − Reserve − Projected Remaining Spend (optional). Daily amount spreads across remaining days this month.</div>
+                <div class="help-text">Safe To Spend = Balance − Upcoming Bills − Safety Cushion − Expected Rest‑of‑Month Spending (optional).</div>
                 <div class="explain" id="advisorExplain">
                     <div class="row"><div class="label">Balance</div><div class="value" id="xBalance">$0.00</div></div>
-                    <div class="row"><div class="label">Reserve (<span id="xBasis">Both</span>)</div><div class="value" id="xReserve">$0.00</div></div>
-                    <div class="row"><div class="label">Planned Upcoming</div><div class="value" id="xPlanned">$0.00</div></div>
-                    <div class="row"><div class="label">Projected Remaining Spend</div><div class="value" id="xProjected">$0.00</div></div>
-                    <div class="row"><div class="label">Safe To Spend Now</div><div class="value" id="xSafe">$0.00</div></div>
-                    <div class="row"><div class="label">Per Day (to month end)</div><div class="value" id="xPerDay">$0.00</div></div>
+                    <div class="row"><div class="label">Safety cushion (<span id="xBasis">Both</span>)</div><div class="value" id="xReserve">$0.00</div></div>
+                    <div class="row"><div class="label">Upcoming bills</div><div class="value" id="xPlanned">$0.00</div></div>
+                    <div class="row"><div class="label">Expected rest‑of‑month</div><div class="value" id="xProjected">$0.00</div></div>
+                    <div class="row"><div class="label">Safe to spend today</div><div class="value" id="xSafe">$0.00</div></div>
+                    <div class="row"><div class="label">Per day</div><div class="value" id="xPerDay">$0.00</div></div>
                 </div>
             </div>
         </div>
