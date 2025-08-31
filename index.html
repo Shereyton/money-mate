@@ -420,8 +420,8 @@
         /* Clean-edged trunk (no glow): solid fill, no filter, no stroke */
         #SavingsTree svg .trunkFill{ fill: var(--tree-trunk-base); stroke: none; filter: none; shape-rendering: geometricPrecision; }
         /* Solid bark color for strokes; avoids gradient fringing */
-        #SavingsTree svg .trunk   { stroke: var(--tree-trunk-base); filter: none; }
-        #SavingsTree svg .branch  { stroke: var(--tree-trunk-base); filter: none; }
+        #SavingsTree svg .trunk   { stroke: var(--tree-trunk-base); filter: none; vector-effect: non-scaling-stroke; }
+        #SavingsTree svg .branch  { stroke: var(--tree-trunk-base); filter: none; vector-effect: non-scaling-stroke; }
         /* Leaves keep rich gradients */
         #SavingsTree svg .leafFill{ fill:   url(#leafGrad); }
         #SavingsTree svg .leafShade{fill:   url(#leafGradDark); }
@@ -2192,12 +2192,13 @@
                     const gs = 0.80 + ST.progress * 0.50; // 0.80..1.30 (taller overall)
                     if (treeGroup) treeGroup.setAttribute('transform', `translate(50 84) scale(${gs.toFixed(3)}) translate(-50 -84)`);
                     // seed fades
-                    const seedScale = 1 - ST.progress*1.1; if (seed) seed.style.opacity = String(clamp(seedScale,0,1));
+                    const seedScale = 1 - ST.progress*1.1; if (seed) { seed.style.opacity = String(clamp(seedScale,0,1)); seed.style.display = (ST.progress > 0.25) ? 'none' : ''; }
                     // sprout phase (0..0.25)
                     const sprPhase = clamp(ST.progress/0.25, 0, 1);
                     const sprHeight = 84 - sprPhase*10;
                     if (sproutStem) sproutStem.setAttribute('d', `M50,84 L50,${sprHeight.toFixed(2)}`);
                     if (sproutLeaf) sproutLeaf.setAttribute('opacity', String(sprPhase));
+                    const spr = treeWrap.querySelector('#sprout'); if (spr) spr.style.display = (ST.progress > 0.35) ? 'none' : '';
                     // trunk tapered fill
                     const trunkPhase = clamp((ST.progress - 0.15) / 0.75, 0, 1);
                     const topY = 84 - trunkPhase*44; // even taller trunk
