@@ -192,7 +192,7 @@
         .metric-card {
             text-align: center;
             position: relative;
-            overflow: hidden; /* keep animations clipped to the card */
+            overflow: visible; /* allow tooltips to escape the card */
             min-height: 180px;
             display: flex;
             flex-direction: column;
@@ -688,7 +688,7 @@
         .info:hover { color: var(--text); }
         .info:focus { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
         .info::after { content: attr(data-tip); position:absolute; left:50%; transform: translate(-50%, -8px); bottom: 130%; background: var(--toast-bg); color: var(--toast-text); padding:8px 10px; border-radius:10px; white-space: normal; text-align:left; min-width: 180px; max-width: 260px; pointer-events: none; opacity: 0; transition: opacity .15s ease; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
-        .info:hover::after, .info:focus::after { opacity: 1; }
+        .info:hover::after, .info:focus::after, .info[data-open="1"]::after { opacity: 1; }
 
         /* Ripple */
         .btn { position: relative; overflow: hidden; }
@@ -1871,6 +1871,10 @@
 
         // Interactive: ripple on buttons
         document.addEventListener('click', function(e) {
+            // Close any open tooltips when clicking away
+            if (!e.target.closest('.info')) {
+                document.querySelectorAll('.info[data-open="1"]').forEach(el => el.removeAttribute('data-open'));
+            }
             const btn = e.target.closest('.btn');
             if (!btn) return;
             const rect = btn.getBoundingClientRect();
@@ -1883,6 +1887,18 @@
             btn.appendChild(ripple);
             setTimeout(() => ripple.remove(), 600);
         });
+
+        // Info tooltip toggle (tap/click)
+        document.addEventListener('click', function(e) {
+            const info = e.target.closest('.info');
+            if (!info) return;
+            // Close others
+            document.querySelectorAll('.info[data-open="1"]').forEach(el => { if (el !== info) el.removeAttribute('data-open'); });
+            const open = info.getAttribute('data-open') === '1';
+            if (open) info.removeAttribute('data-open'); else info.setAttribute('data-open','1');
+            e.stopPropagation();
+        });
+        document.addEventListener('keydown', function(e){ if (e.key === 'Escape') document.querySelectorAll('.info[data-open="1"]').forEach(el => el.removeAttribute('data-open')); });
 
         // Card tilt effect
         function attachTilt() {
