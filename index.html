@@ -1090,6 +1090,8 @@
                     <div class="row"><div class="label">Safety cushion (<span id="xBasis">Both</span>)</div><div class="value" id="xReserve">$0.00</div></div>
                     <div class="row"><div class="label">Upcoming bills</div><div class="value" id="xPlanned">$0.00</div></div>
                     <div class="row"><div class="label">Expected rest‑of‑month</div><div class="value" id="xProjected">$0.00</div></div>
+                    <div class="row"><div class="label">Days left in period</div><div class="value" id="xDaysLeft">0</div></div>
+                    <div class="row"><div class="label">Daily pace used</div><div class="value" id="xDailyPace">$0.00/day</div></div>
                     <div class="row"><div class="label">Safe to spend today</div><div class="value" id="xSafe">$0.00</div></div>
                     <div class="row"><div class="label">Per day</div><div class="value" id="xPerDay">$0.00</div></div>
                 </div>
@@ -2612,6 +2614,45 @@
                 return (d >= s0 && d < e0) ? sum + (parseFloat(e.amount)||0) : sum;
             }, 0);
         }
+        function dailyTotalsBetween(start, end){
+            const s0 = startOfDay(start), e0 = startOfDay(end);
+            const days = Math.max(1, daysBetween(s0, e0));
+            const map = new Map();
+            (financialData.expenses||[]).forEach(e=>{
+                const t = Number(e.id)||0; if(!t) return; const d = startOfDay(new Date(t));
+                if (d >= s0 && d < e0) {
+                    const k = d.toISOString().slice(0,10);
+                    map.set(k, (map.get(k)||0) + (parseFloat(e.amount)||0));
+                }
+            });
+            const arr = [];
+            for (let i=0;i<days;i++){
+                const d = new Date(s0); d.setDate(s0.getDate()+i);
+                const k = d.toISOString().slice(0,10);
+                arr.push(map.get(k)||0);
+            }
+            return arr;
+        }
+        function trimmedMean(values, upperFrac=0.2, lowerFrac=0){
+            const n = values.length; if (!n) return 0;
+            const a = [...values].sort((x,y)=>x-y);
+            const lo = Math.floor(n * Math.max(0, Math.min(0.49, lowerFrac)));
+            const hi = Math.floor(n * Math.max(0, Math.min(0.49, upperFrac)));
+            const slice = a.slice(lo, n-hi);
+            const m = slice.length; if (!m) return a.reduce((s,v)=>s+v,0)/n;
+            return slice.reduce((s,v)=>s+v,0)/m;
+        }
+        function expWeightedAvg(values){
+            if (!values.length) return 0;
+            const arr = values; // assume oldest..newest
+            let wSum = 0, sum = 0;
+            const decay = 0.5; // newer days count more
+            let w = 1;
+            for (let i=0;i<arr.length;i++){
+                sum += arr[i]*w; wSum += w; w *= decay;
+            }
+            return wSum ? (sum/wSum) : 0;
+        }
         function updateAdvisor(){
             try {
                 const reservePct = parseFloat(localStorage.getItem('reservePercent')||'');
@@ -2647,18 +2688,18 @@
                     daysLeft = Math.max(1, daysInMonth - day + 1);
                     daysGone = Math.max(1, day - 1);
                 }
-                // Sum expenses in current period
+                // Sum expenses in current period and build robust daily pace
                 const expInPeriod = sumExpensesBetween(periodStart, now);
                 const dailyMTD = expInPeriod / Math.max(1, daysGone);
-                // Recent 7‑day (or since period start) smoothing
-                const sevenAgo = new Date(now); sevenAgo.setDate(now.getDate()-6);
-                const recentStart = startOfDay(sevenAgo < periodStart ? periodStart : sevenAgo);
-                const recentDays = Math.max(1, daysBetween(recentStart, startOfDay(now)));
-                const recentAmt = sumExpensesBetween(recentStart, now);
-                const dailyRecent = recentAmt / recentDays;
-                // Blend: favor recent if enough samples, otherwise MTD
-                const haveRecent = recentAmt > 0 && recentDays >= 2;
-                const daily = haveRecent ? (0.6 * dailyRecent + 0.4 * dailyMTD) : dailyMTD;
+                const totals = dailyTotalsBetween(periodStart, now);
+                const recentWindow = Math.min(totals.length, 14);
+                const recentArr = totals.slice(totals.length - recentWindow);
+                const trimmed = trimmedMean(recentArr, 0.2, 0);
+                const expAvg = expWeightedAvg(recentArr.slice(-Math.min(recentArr.length,7)).reverse()); // newest weighted highest
+                const robustRecent = (recentArr.length ? ( (isNaN(trimmed)?0:trimmed)*0.5 + (isNaN(expAvg)?0:expAvg)*0.5 ) : 0);
+                const recentWeight = Math.max(0.3, Math.min(1, recentArr.length/7));
+                const dailyRaw = recentArr.length ? (recentWeight*robustRecent + (1-recentWeight)*dailyMTD) : dailyMTD;
+                const daily = Math.max(0, isFinite(dailyRaw)?dailyRaw:0);
                 const projectedRemaining = useProj ? Math.max(0, daily * daysLeft) : 0;
                 // Cap reserve so it can't exceed available balance (prevents overshrink)
                 reserve = Math.min(reserve, Math.max(0, balance));
@@ -2682,6 +2723,8 @@
                 const bPrj = document.getElementById('xProjected'); if (bPrj) bPrj.textContent = fmt(projectedRemaining);
                 const bSafe = document.getElementById('xSafe'); if (bSafe) bSafe.textContent = fmt(safe);
                 const bPd = document.getElementById('xPerDay'); if (bPd) bPd.textContent = fmt(perDay);
+                const bDays = document.getElementById('xDaysLeft'); if (bDays) bDays.textContent = String(daysLeft);
+                const bPace = document.getElementById('xDailyPace'); if (bPace) bPace.textContent = fmt(daily) + '/day';
                 const xBasis = document.getElementById('xBasis'); if (xBasis) xBasis.textContent = basis==='both'?'Both':basis[0].toUpperCase()+basis.slice(1);
             } catch {}
         }
