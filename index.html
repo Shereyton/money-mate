@@ -1047,6 +1047,34 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-row" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
+                    <div class="input-group">
+                        <label for="advisorCycle">Budget period</label>
+                        <select id="advisorCycle">
+                            <option value="month" selected>This month</option>
+                            <option value="paycheck">Until next paycheck</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="payFrequency">Pay schedule</label>
+                        <select id="payFrequency">
+                            <option value="weekly">Weekly</option>
+                            <option value="biweekly" selected>Bi-weekly (every 2 weeks)</option>
+                            <option value="semimonthly">Semimonthly (1st & 15th)</option>
+                            <option value="monthly">Monthly (pick a day)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
+                    <div class="input-group">
+                        <label for="payAnchor">Last payday</label>
+                        <input type="date" id="payAnchor" />
+                    </div>
+                    <div class="input-group">
+                        <label for="payMonthlyDay">Monthly payday (1–28)</label>
+                        <input type="number" id="payMonthlyDay" min="1" max="28" placeholder="e.g., 15" />
+                    </div>
+                </div>
             </details>
             <div class="planned">
                 <h3 style="margin: 12px 0 8px; color: var(--text); font-size:1.1rem;">Planned Upcoming Expenses</h3>
@@ -2289,6 +2317,10 @@
             const amtEl = document.getElementById('plannedAmount');
             const basisEl = document.getElementById('reserveBasis');
             const projEl = document.getElementById('useProjection');
+            const cycleEl = document.getElementById('advisorCycle');
+            const freqEl = document.getElementById('payFrequency');
+            const anchorEl = document.getElementById('payAnchor');
+            const monDayEl = document.getElementById('payMonthlyDay');
             let reserve = parseFloat(localStorage.getItem('reservePercent')||'');
             if (isNaN(reserve)) reserve = 20;
             if (reserveInput) reserveInput.value = String(reserve);
@@ -2296,6 +2328,14 @@
             if (basisEl) basisEl.value = savedBasis;
             const savedProj = localStorage.getItem('useProjection') || 'on';
             if (projEl) projEl.value = savedProj;
+            const savedCycle = localStorage.getItem('advisorCycle') || 'month';
+            if (cycleEl) cycleEl.value = savedCycle;
+            const savedFreq = localStorage.getItem('payFrequency') || 'biweekly';
+            if (freqEl) freqEl.value = savedFreq;
+            const savedAnchor = localStorage.getItem('payAnchor');
+            if (anchorEl && savedAnchor) anchorEl.value = savedAnchor;
+            const savedMonDay = parseInt(localStorage.getItem('payMonthlyDay')||'15',10);
+            if (monDayEl) monDayEl.value = String(isNaN(savedMonDay)?15:savedMonDay);
             function setReserve(){
                 const v = parseFloat(reserveInput.value);
                 if (!isNaN(v) && v >= 0) { localStorage.setItem('reservePercent', String(v)); }
@@ -2307,6 +2347,17 @@
             if (reserveInput) reserveInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setReserve(); });
             if (basisEl) basisEl.addEventListener('change', setReserve);
             if (projEl) projEl.addEventListener('change', setReserve);
+            function saveCycle(){
+                if (cycleEl) localStorage.setItem('advisorCycle', cycleEl.value || 'month');
+                if (freqEl) localStorage.setItem('payFrequency', freqEl.value || 'biweekly');
+                if (anchorEl && anchorEl.value) localStorage.setItem('payAnchor', anchorEl.value);
+                if (monDayEl && monDayEl.value) localStorage.setItem('payMonthlyDay', String(parseInt(monDayEl.value,10)||15));
+                updateAdvisor();
+            }
+            if (cycleEl) cycleEl.addEventListener('change', saveCycle);
+            if (freqEl) freqEl.addEventListener('change', saveCycle);
+            if (anchorEl) anchorEl.addEventListener('change', saveCycle);
+            if (monDayEl) monDayEl.addEventListener('input', saveCycle);
             if (addBtn) addBtn.addEventListener('click', ()=>{
                 const n = (nameEl?.value || '').trim();
                 const a = parseFloat(amtEl?.value);
@@ -2526,6 +2577,34 @@
             if (idx>=0) { financialData.planned.splice(idx,1); renderPlanned(); updateAdvisor(); saveData(); showToast('Planned removed','warn'); }
         }
 
+        function daysBetween(a,b){ const MS=24*60*60*1000; return Math.max(0, Math.ceil((b.setHours(0,0,0,0)-a.setHours(0,0,0,0))/MS)); }
+        function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+        function parseDateInput(val){ if (!val) return null; const d=new Date(val+'T00:00:00'); return isNaN(+d)?null:d; }
+        function getNextPayday(today, freq, anchor, monthlyDay){
+            const t = startOfDay(today);
+            if (freq==='semimonthly'){
+                const y = t.getFullYear(); const m = t.getMonth(); const d = t.getDate();
+                const next1 = new Date(y, m, d <= 1 ? 1 : (d <= 15 ? 15 : 1), 0,0,0,0);
+                if (d < 1) return next1; if (d < 15) return new Date(y,m,15); else return new Date(y,m+1,1);
+            }
+            if (freq==='monthly'){
+                const day = Math.min(Math.max(1, monthlyDay||15),28);
+                const y = t.getFullYear(); const m = t.getMonth(); const d = t.getDate();
+                if (d < day) return new Date(y,m,day); else return new Date(y,m+1,day);
+            }
+            // weekly/biweekly require anchor
+            const a = anchor ? startOfDay(anchor) : t;
+            const period = (freq==='weekly') ? 7 : 14;
+            const diffDays = daysBetween(a, t);
+            const rem = diffDays % period;
+            const daysToNext = rem===0 ? period : (period - rem);
+            const next = new Date(t); next.setDate(t.getDate() + daysToNext); return next;
+        }
+        function getPrevPayday(today, freq, anchor, monthlyDay){
+            const next = getNextPayday(today, freq, anchor, monthlyDay);
+            const periodDays = freq==='weekly'?7: freq==='biweekly'?14: freq==='semimonthly'? (next.getDate()===1?16:15) : 30; // rough for monthly
+            const prev = new Date(next); prev.setDate(next.getDate()-periodDays); return startOfDay(prev);
+        }
         function updateAdvisor(){
             try {
                 const reservePct = parseFloat(localStorage.getItem('reservePercent')||'');
@@ -2539,12 +2618,34 @@
                 const reserveBase = basis === 'balance' ? balance : basis === 'income' ? income : (balance + income);
                 const reserve = Math.max(0, reserveBase * pct);
                 const now = new Date();
-                const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-                const day = now.getDate();
-                const daysLeft = Math.max(1, daysInMonth - day + 1);
-                const daysGone = Math.max(1, day - 1);
-                const mtd = (financialData.expenses||[]).reduce((s,e)=>{ const t=Number(e.id)||0; if(!t) return s; const d=new Date(t); return (d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth()) ? s + (parseFloat(e.amount)||0) : s; }, 0);
-                const daily = mtd / daysGone;
+                const cycle = (localStorage.getItem('advisorCycle')||'month');
+                const freq = (localStorage.getItem('payFrequency')||'biweekly');
+                const anchorVal = localStorage.getItem('payAnchor');
+                const anchor = parseDateInput(anchorVal) || now;
+                const monDay = parseInt(localStorage.getItem('payMonthlyDay')||'15',10)||15;
+                let periodStart, periodEnd, daysLeft, daysGone;
+                if (cycle==='paycheck'){
+                    const next = getNextPayday(now, freq, anchor, monDay);
+                    periodEnd = startOfDay(next);
+                    const prev = getPrevPayday(now, freq, anchor, monDay);
+                    periodStart = startOfDay(prev);
+                    daysLeft = Math.max(1, daysBetween(startOfDay(now), periodEnd));
+                    daysGone = Math.max(1, daysBetween(periodStart, startOfDay(now)));
+                } else {
+                    const y = now.getFullYear(); const m = now.getMonth();
+                    periodStart = new Date(y, m, 1);
+                    periodEnd = new Date(y, m+1, 1);
+                    const daysInMonth = new Date(y, m+1, 0).getDate();
+                    const day = now.getDate();
+                    daysLeft = Math.max(1, daysInMonth - day + 1);
+                    daysGone = Math.max(1, day - 1);
+                }
+                // Sum expenses in current period
+                const expInPeriod = (financialData.expenses||[]).reduce((s,e)=>{
+                    const t=Number(e.id)||0; if(!t) return s; const d=new Date(t);
+                    return (d >= periodStart && d < periodEnd) ? s + (parseFloat(e.amount)||0) : s;
+                }, 0);
+                const daily = expInPeriod / daysGone;
                 const projectedRemaining = useProj ? Math.max(0, daily * daysLeft) : 0;
                 let safe = balance - planned - reserve - projectedRemaining;
                 if (!isFinite(safe)) safe = 0;
