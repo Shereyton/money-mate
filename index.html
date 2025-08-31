@@ -400,6 +400,13 @@
         .advisor .explain .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 4px 0; }
         .advisor .explain .label { color: var(--muted); font-weight: 700; }
         .advisor .explain .value { color: var(--text); font-weight: 800; }
+        /* Ensure planned inputs size well on all screens */
+        .advisor .planned .form-row.planned-row { grid-template-columns: 2fr 1fr auto; }
+        .form-row .input-group { min-width: 0; }
+        @media (max-width: 640px) {
+            .advisor .planned .form-row.planned-row { grid-template-columns: 1fr; }
+            .advisor .planned .form-row.planned-row .btn { width: 100%; }
+        }
         @media (max-width: 640px) {
             .advisor .controls { grid-template-columns: 1fr; }
         }
@@ -477,7 +484,10 @@
         .tree-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: end; margin-top: 12px; }
         .tree-controls .input-group { margin: 0; }
         .tree-controls input { padding: 10px 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; font-size: 16px; }
-        @media (max-width: 640px) { .tree-controls { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) { 
+            .tree-controls { grid-template-columns: 1fr; }
+            .tree-controls .btn, .tree-controls .delete-btn { width: 100%; }
+        }
 
         /* Mobile adjustments to avoid overlap and keep symmetry */
         @media (max-width: 640px) {
@@ -1040,7 +1050,7 @@
             </details>
             <div class="planned">
                 <h3 style="margin: 12px 0 8px; color: var(--text); font-size:1.1rem;">Planned Upcoming Expenses</h3>
-                <div class="form-row" style="grid-template-columns: 2fr 1fr auto;">
+                <div class="form-row planned-row">
                     <div class="input-group"><label>Name</label><input type="text" id="plannedName" placeholder="e.g., Car insurance"/></div>
                     <div class="input-group"><label>Amount ($)</label><input type="number" step="0.01" id="plannedAmount" placeholder="0.00"/></div>
                     <button class="btn" id="addPlannedBtn">Add Planned</button>
@@ -1147,22 +1157,28 @@
                 <div class="k"><div class="label">Goal</div><div class="value" id="savedGoal">$0.00</div></div>
                 <div class="k"><div class="label">Progress</div><div class="value" id="savedPct">0%</div></div>
             </div>
-            <div class="tree-controls">
-                <div class="input-group">
-                    <label for="savingsGoalInput">Savings Goal ($)</label>
-                    <input type="number" id="savingsGoalInput" step="0.01" placeholder="e.g., 5000.00" />
-                </div>
-                <button class="btn" id="setSavingsGoalBtn">Set Goal</button>
-                <div></div>
-                <div class="input-group">
-                    <label for="savingsAmountInput">Amount ($)</label>
-                    <input type="number" id="savingsAmountInput" step="0.01" placeholder="0.00" />
-                </div>
-                <button class="btn" id="depositSavingsBtn">Deposit</button>
-                <button class="delete-btn" id="withdrawSavingsBtn">Withdraw</button>
+        <div class="tree-controls">
+            <div class="input-group">
+                <label for="savingsGoalInput">Savings Goal ($)</label>
+                <input type="number" id="savingsGoalInput" step="0.01" placeholder="e.g., 5000.00" />
             </div>
-            <div class="help-text" style="margin-top:8px;">Deposits move money from Balance into Savings. Withdrawals move it back to Balance.</div>
+            <button class="btn" id="setSavingsGoalBtn">Set Goal</button>
+            <div></div>
+            <div class="input-group">
+                <label for="savingsAmountInput">Amount ($)</label>
+                <input type="number" id="savingsAmountInput" step="0.01" placeholder="0.00" />
+            </div>
+            <button class="btn" id="depositSavingsBtn">Deposit</button>
+            <button class="delete-btn" id="withdrawSavingsBtn">Withdraw</button>
+            <div class="input-group">
+                <label for="savingsSetInput">Current Saved ($)</label>
+                <input type="number" id="savingsSetInput" step="0.01" placeholder="0.00" />
+            </div>
+            <button class="btn" id="updateSavedBtn">Update Saved</button>
+            <div></div>
         </div>
+        <div class="help-text" style="margin-top:8px;">Deposits move money from Balance into Savings. Withdrawals move it back to Balance.</div>
+      </div>
     </div>
 
     <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
@@ -2313,6 +2329,8 @@
         const amtInput = document.getElementById('savingsAmountInput');
         const depositBtn = document.getElementById('depositSavingsBtn');
         const withdrawBtn = document.getElementById('withdrawSavingsBtn');
+        const savingsSetInput = document.getElementById('savingsSetInput');
+        const updateSavedBtn = document.getElementById('updateSavedBtn');
         const treeWrap = document.getElementById('SavingsTree');
         function fmtMoney(n){ return '$' + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
         function savingsPercent(){ const g = parseFloat(financialData.savingsGoal)||0; const s = parseFloat(financialData.savings)||0; if(!g) return 0; return Math.max(0, Math.min(100, (s/g)*100)); }
@@ -2473,6 +2491,15 @@
         if (goalInput) goalInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setSavingsGoal(); });
         if (depositBtn) depositBtn.addEventListener('click', depositSavings);
         if (withdrawBtn) withdrawBtn.addEventListener('click', withdrawSavings);
+        function setSavedAmount(){
+            const v = parseFloat(savingsSetInput?.value);
+            if (isNaN(v) || v < 0) { showToast('Enter a valid saved amount', 'error'); return; }
+            financialData.savings = v;
+            saveData(); refreshSavingsTree(false); updateAdvisor(); showToast('Saved amount updated','info');
+        }
+        if (updateSavedBtn) updateSavedBtn.addEventListener('click', setSavedAmount);
+        if (savingsSetInput) savingsSetInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setSavedAmount(); });
+        if (savingsSetInput) savingsSetInput.value = String((parseFloat(financialData.savings)||0).toFixed(2));
         initSavingsTree();
         refreshSavingsTree(true);
 
