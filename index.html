@@ -2190,6 +2190,8 @@
             financialData.balance = val;
             animateValue('balanceDisplay', val);
             updateBalanceClass();
+            // Keep Spending Advisor in lockstep with balance changes
+            updateAdvisor();
             showToast('Balance updated', 'info');
             refreshGauge();
             saveData();
