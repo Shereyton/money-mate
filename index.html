@@ -1055,7 +1055,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-row" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
+                <div class="form-row" id="rowCycleFreq" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
                     <div class="input-group">
                         <label for="advisorCycle">Budget period</label>
                         <select id="advisorCycle">
@@ -1073,7 +1073,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-row" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
+                <div class="form-row" id="rowAnchorMonthly" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
                     <div class="input-group">
                         <label for="payAnchor">Last payday</label>
                         <input type="date" id="payAnchor" />
@@ -1081,6 +1081,12 @@
                     <div class="input-group">
                         <label for="payMonthlyDay">Monthly payday (1–28)</label>
                         <input type="number" id="payMonthlyDay" min="1" max="28" placeholder="e.g., 15" />
+                    </div>
+                </div>
+                <div class="form-row" id="rowNextPay" style="grid-template-columns: 1fr; gap:10px; margin-top:8px; display:none;">
+                    <div class="input-group">
+                        <label for="nextPayDate">Next payday (pick a date)</label>
+                        <input type="date" id="nextPayDate" />
                     </div>
                 </div>
             </details>
@@ -2348,6 +2354,10 @@
             const freqEl = document.getElementById('payFrequency');
             const anchorEl = document.getElementById('payAnchor');
             const monDayEl = document.getElementById('payMonthlyDay');
+            const nextPayEl = document.getElementById('nextPayDate');
+            const rowCycleFreq = document.getElementById('rowCycleFreq');
+            const rowAnchorMonthly = document.getElementById('rowAnchorMonthly');
+            const rowNextPay = document.getElementById('rowNextPay');
             let reserve = parseFloat(localStorage.getItem('reservePercent')||'');
             const migrated = localStorage.getItem('reserveDefaultMigrated') === '1';
             if (isNaN(reserve)) {
@@ -2374,6 +2384,22 @@
             if (anchorEl && savedAnchor) anchorEl.value = savedAnchor;
             const savedMonDay = parseInt(localStorage.getItem('payMonthlyDay')||'15',10);
             if (monDayEl) monDayEl.value = String(isNaN(savedMonDay)?15:savedMonDay);
+            const savedNextPay = localStorage.getItem('nextPayDate');
+            if (nextPayEl && savedNextPay) nextPayEl.value = savedNextPay;
+
+            function updatePayUi(){
+                const cyc = (cycleEl?.value||'month');
+                if (cyc === 'paycheck') {
+                    if (rowNextPay) rowNextPay.style.display = '';
+                    if (rowCycleFreq) rowCycleFreq.style.display = 'none';
+                    if (rowAnchorMonthly) rowAnchorMonthly.style.display = 'none';
+                } else {
+                    if (rowNextPay) rowNextPay.style.display = 'none';
+                    if (rowCycleFreq) rowCycleFreq.style.display = 'none';
+                    if (rowAnchorMonthly) rowAnchorMonthly.style.display = 'none';
+                }
+            }
+            updatePayUi();
             function setReserve(){
                 const v = parseFloat(reserveInput.value);
                 if (!isNaN(v) && v >= 0) { localStorage.setItem('reservePercent', String(v)); }
@@ -2390,12 +2416,15 @@
                 if (freqEl) localStorage.setItem('payFrequency', freqEl.value || 'biweekly');
                 if (anchorEl && anchorEl.value) localStorage.setItem('payAnchor', anchorEl.value);
                 if (monDayEl && monDayEl.value) localStorage.setItem('payMonthlyDay', String(parseInt(monDayEl.value,10)||15));
+                if (nextPayEl && nextPayEl.value) localStorage.setItem('nextPayDate', nextPayEl.value);
+                updatePayUi();
                 updateAdvisor();
             }
             if (cycleEl) cycleEl.addEventListener('change', saveCycle);
             if (freqEl) freqEl.addEventListener('change', saveCycle);
             if (anchorEl) anchorEl.addEventListener('change', saveCycle);
             if (monDayEl) monDayEl.addEventListener('input', saveCycle);
+            if (nextPayEl) nextPayEl.addEventListener('change', saveCycle);
             if (addBtn) addBtn.addEventListener('click', ()=>{
                 const n = (nameEl?.value || '').trim();
                 const a = parseFloat(amtEl?.value);
@@ -2708,7 +2737,16 @@
                 const anchor = parseDateInput(anchorVal) || now;
                 const monDay = parseInt(localStorage.getItem('payMonthlyDay')||'15',10)||15;
                 let periodStart, periodEnd, daysLeft, daysGone;
-                if (cycle==='paycheck'){
+                const nextPayVal = localStorage.getItem('nextPayDate');
+                const nextPayCustom = parseDateInput(nextPayVal);
+                if (cycle==='paycheck' && nextPayCustom) {
+                    periodEnd = startOfDay(nextPayCustom);
+                    const today0 = startOfDay(now);
+                    daysLeft = Math.max(1, daysBetween(today0, periodEnd));
+                    // Pace will be computed from recent window instead of a formal period start
+                    periodStart = new Date(today0); periodStart.setDate(today0.getDate()-14);
+                    daysGone = Math.max(1, daysBetween(periodStart, today0));
+                } else if (cycle==='paycheck'){
                     const next = getNextPayday(now, freq, anchor, monDay);
                     periodEnd = startOfDay(next);
                     const prev = getPrevPayday(now, freq, anchor, monDay);
@@ -2724,7 +2762,7 @@
                     daysLeft = Math.max(1, daysInMonth - day + 1);
                     daysGone = Math.max(1, day - 1);
                 }
-                // Sum expenses in current period and build robust daily pace
+                // Sum expenses in current pace window and build robust daily pace
                 const expInPeriod = sumExpensesBetween(periodStart, now);
                 const dailyMTD = expInPeriod / Math.max(1, daysGone);
                 const totals = dailyTotalsBetween(periodStart, now);
