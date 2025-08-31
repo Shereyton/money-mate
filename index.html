@@ -51,6 +51,16 @@
             --gauge-wave: var(--primary);
             --gauge-wave2: var(--accent);
             --gauge-border: var(--border);
+            /* Realistic tree palette */
+            --tree-trunk-base: #6d4c2a;
+            --tree-trunk-shadow: #4e341a;
+            --leaf-light: #6fd27a;
+            --leaf-mid:  #3daa52;
+            --leaf-dark: #1e7032;
+            --soil-top:  #9a6a49;
+            --soil-mid:  #7d5237;
+            --soil-deep: #5a3a27;
+            --soil-speck: rgba(0,0,0,.12);
         }
 
         /* Sleek (experimental) theme overrides */
@@ -363,6 +373,99 @@
         .category-items { padding: 10px; }
         .chev { transition: transform .2s ease; }
         .collapsed .chev { transform: rotate(-90deg); }
+
+        /* Spending Advisor */
+        .advisor { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .advisor h3 { margin: 0 0 10px; color: var(--text); }
+        .advisor .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .advisor .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+        .advisor .kpi .label { color: var(--muted); font-weight: 700; font-size: .85rem; }
+        .advisor .kpi .value { color: var(--text); font-weight: 800; font-size: 1.25rem; margin-top: 6px; }
+        .advisor .controls { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-top: 12px; }
+        .advisor .controls .input-group { margin: 0; }
+        .advisor .controls input { padding: 10px 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; font-size: 16px; }
+        .advisor .planned { margin-top: 12px; }
+        .advisor .planned-item { display:flex; justify-content: space-between; align-items:center; padding:10px; border-radius:10px; background: var(--surface); border: 1px solid var(--border); margin-top:6px; }
+        .advisor .planned-item .name { color: var(--text); font-weight: 700; overflow-wrap: anywhere; }
+        .advisor .planned-item .amt { font-weight: 800; }
+        @media (max-width: 640px) {
+            .advisor .controls { grid-template-columns: 1fr; }
+        }
+
+        /* Growing Tree (Savings) */
+        .tree-card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .tree-wrap { position: relative; display: grid; place-items: center; }
+        /* SVG-based tree container */
+        .savings-tree-wrap{ width:100%; max-width:520px; aspect-ratio:16/9; position:relative; border-radius:16px; overflow:hidden; background: linear-gradient(#bfe8ff, var(--sky, #eaf6ff)); box-shadow: 0 12px 28px rgba(0,0,0,.12); }
+        /* Layered, gritty soil with strata + speckles */
+        .savings-tree-wrap .soil{
+          position:absolute; left:0; right:0; bottom:0; height:26%;
+          background:
+            repeating-linear-gradient(
+              to top,
+              rgba(0,0,0,0.04) 0px,
+              rgba(0,0,0,0.04) 3px,
+              transparent 3px,
+              transparent 10px
+            ),
+            radial-gradient(circle at 20% 70%, var(--soil-speck) 0 1px, transparent 2px),
+            radial-gradient(circle at 60% 85%, var(--soil-speck) 0 1px, transparent 2px),
+            radial-gradient(circle at 80% 60%, var(--soil-speck) 0 1px, transparent 2px),
+            linear-gradient(to top, var(--soil-deep), var(--soil-mid) 55%, var(--soil-top));
+        }
+        .savings-tree-wrap svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+        /* Prefer crisp edges on SVG to avoid AA halo along vertical edges */
+        .tree-svg { shape-rendering: crispEdges; }
+        .tree-svg #trunk, .tree-svg #trunk * { stroke: none !important; filter: none !important; }
+        .tree-svg #trunkFill { stroke: none !important; filter: none !important; }
+        .savings-tree-wrap .fade-in{ animation: fadeIn .5s ease-out both; }
+        @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+        /* Bind SVG parts to realistic gradients/filters */
+        /* Clean-edged trunk (no glow): solid fill, no filter, no stroke */
+        #SavingsTree svg .trunkFill{ fill: var(--tree-trunk-base); stroke: none; filter: none; shape-rendering: geometricPrecision; }
+        /* Solid bark color for strokes; avoids gradient fringing */
+        #SavingsTree svg .trunk   { stroke: var(--tree-trunk-base); filter: none; vector-effect: non-scaling-stroke; }
+        #SavingsTree svg .branch  { stroke: var(--tree-trunk-base); filter: none; vector-effect: non-scaling-stroke; }
+        /* Leaves keep rich gradients */
+        #SavingsTree svg .leafFill{ fill:   url(#leafGrad); }
+        #SavingsTree svg .leafShade{fill:   url(#leafGradDark); }
+        #SavingsTree svg #canopy  { filter: url(#leafShadow); }
+        #SavingsTree svg #seed circle { fill: var(--tree-trunk-shadow); }
+
+        /* === Ultra Real Tree & Ground (override-ready) === */
+        :root{
+          --tree-trunk-base:#6d4c2a;
+          --tree-trunk-shadow:#4e341a;
+          --leaf-light:#6fd27a;
+          --leaf-mid:#3daa52;
+          --leaf-dark:#1e7032;
+          --soil-top:#9a6a49;
+          --soil-mid:#7d5237;
+          --soil-deep:#5a3a27;
+          --soil-speck:rgba(0,0,0,.12);
+        }
+        #SavingsTree .soil{
+          background:
+            repeating-linear-gradient(to top,rgba(0,0,0,.04) 0px,rgba(0,0,0,.04) 3px,transparent 3px,transparent 10px),
+            radial-gradient(circle at 20% 72%,var(--soil-speck) 0 1px,transparent 2px),
+            radial-gradient(circle at 64% 86%,var(--soil-speck) 0 1px,transparent 2px),
+            radial-gradient(circle at 82% 63%,var(--soil-speck) 0 1px,transparent 2px),
+            linear-gradient(to top,var(--soil-deep),var(--soil-mid) 55%,var(--soil-top));
+        }
+        #SavingsTree svg .trunkFill{ fill:url(#trunkGrad); filter:url(#barkNoise); }
+        #SavingsTree svg .branch{ stroke:url(#trunkGrad); }
+        #SavingsTree svg .leafFill{ fill:url(#leafGrad); }
+        #SavingsTree svg .leafShade{ fill:url(#leafGradDark); }
+        #SavingsTree svg #canopy{ filter:url(#leafShadow); }
+        #SavingsTree svg #groundShadow{ fill:rgba(0,0,0,.15); }
+        .tree-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 10px; }
+        .tree-kpis .k { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+        .tree-kpis .k .label { color: var(--muted); font-weight: 700; font-size: .85rem; }
+        .tree-kpis .k .value { color: var(--text); font-weight: 800; font-size: 1.1rem; margin-top: 4px; }
+        .tree-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: end; margin-top: 12px; }
+        .tree-controls .input-group { margin: 0; }
+        .tree-controls input { padding: 10px 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; font-size: 16px; }
+        @media (max-width: 640px) { .tree-controls { grid-template-columns: 1fr; } }
 
         /* Mobile adjustments to avoid overlap and keep symmetry */
         @media (max-width: 640px) {
@@ -811,7 +914,7 @@
             <div class="expense-list" id="expenseList"></div>
         </div>
 
-        <div class="charts-section">
+            <div class="charts-section">
             <div class="chart-container">
                 <h3 class="chart-title">📊 Income vs Expenses</h3>
                 <canvas id="barChart"></canvas>
@@ -835,6 +938,152 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Spending Advisor -->
+        <div class="input-section advisor" id="advisorSection">
+            <h2 style="margin-bottom: 10px; color: var(--text);">Spending Advisor</h2>
+            <div class="grid" style="margin-bottom: 8px;">
+                <div class="kpi">
+                    <div class="label">Safe To Spend Now</div>
+                    <div class="value" id="kpiSafeNow">$0.00</div>
+                </div>
+                <div class="kpi">
+                    <div class="label">Per Day (to month end)</div>
+                    <div class="value" id="kpiPerDay">$0.00</div>
+                </div>
+                <div class="kpi">
+                    <div class="label">Reserve</div>
+                    <div class="value" id="kpiReserve">$0.00</div>
+                </div>
+                <div class="kpi">
+                    <div class="label">Planned Upcoming</div>
+                    <div class="value" id="kpiPlanned">$0.00</div>
+                </div>
+            </div>
+            <div class="controls">
+                <div class="input-group">
+                    <label for="reservePercent">Reserve for savings and buffer (%)</label>
+                    <input type="number" id="reservePercent" min="0" max="90" step="1" placeholder="e.g., 20">
+                </div>
+                <button class="btn" id="applyReserveBtn">Apply</button>
+            </div>
+            <div class="planned">
+                <h3 style="margin: 12px 0 8px; color: var(--text); font-size:1.1rem;">Planned Upcoming Expenses</h3>
+                <div class="form-row" style="grid-template-columns: 2fr 1fr auto;">
+                    <div class="input-group"><label>Name</label><input type="text" id="plannedName" placeholder="e.g., Car insurance"/></div>
+                    <div class="input-group"><label>Amount ($)</label><input type="number" step="0.01" id="plannedAmount" placeholder="0.00"/></div>
+                    <button class="btn" id="addPlannedBtn">Add Planned</button>
+                </div>
+                <div id="plannedList"></div>
+                <div class="help-text">Safe To Spend = Balance − Planned Upcoming − Reserve. Daily amount spreads it across the remaining days this month.</div>
+            </div>
+        </div>
+
+        <!-- Savings: Growing Tree -->
+        <div class="input-section tree-card" id="savingsSection">
+            <h2 style="margin-bottom: 10px; color: var(--text);">Growing Tree — Savings</h2>
+            <div class="tree-wrap">
+                <div class="savings-tree-wrap" id="SavingsTree">
+                  <div class="soil"></div>
+                  <svg class="tree-svg" viewBox="0 0 100 100" aria-label="Savings growth tree">
+                    <!-- Realistic paints & filters -->
+                    <defs>
+                      <!-- Clip to keep trunk strictly above ground line (y=84) -->
+                      <clipPath id="aboveGroundClip">
+                        <rect x="0" y="0" width="100" height="84" />
+                      </clipPath>
+                      <linearGradient id="trunkGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stop-color="var(--tree-trunk-base)"/>
+                        <stop offset="60%"  stop-color="var(--tree-trunk-base)"/>
+                        <stop offset="100%" stop-color="var(--tree-trunk-shadow)"/>
+                      </linearGradient>
+                      <radialGradient id="leafGrad" cx="35%" cy="35%" r="70%">
+                        <stop offset="0%"   stop-color="var(--leaf-light)"/>
+                        <stop offset="55%"  stop-color="var(--leaf-mid)"/>
+                        <stop offset="100%" stop-color="var(--leaf-dark)"/>
+                      </radialGradient>
+                      <radialGradient id="leafGradDark" cx="65%" cy="65%" r="80%">
+                        <stop offset="0%"   stop-color="var(--leaf-mid)"/>
+                        <stop offset="100%" stop-color="var(--leaf-dark)"/>
+                      </radialGradient>
+                      <filter id="leafShadow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="blur"/>
+                        <feOffset in="blur" dx="0" dy="1.2" result="off"/>
+                        <feMerge>
+                          <feMergeNode in="off"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
+                      <filter id="barkNoise" x="-10%" y="-10%" width="120%" height="120%">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" result="noise"/>
+                        <feColorMatrix in="noise" type="matrix"
+                          values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .35 0" result="alpha"/>
+                        <feBlend in="SourceGraphic" in2="alpha" mode="multiply"/>
+                      </filter>
+                    </defs>
+                    <g id="treeGroup">
+                      <!-- Ground shadow under canopy -->
+                      <ellipse id="groundShadow" cx="50" cy="86.5" rx="4" ry="1.6" opacity="0" />
+                      <!-- Seed -->
+                      <g id="seed" class="fade-in">
+                        <circle cx="50" cy="84" r="3.6"></circle>
+                        <ellipse cx="50" cy="86.2" rx="6" ry="1.8" fill="rgba(0,0,0,.08)"/>
+                      </g>
+                      <!-- Sprout -->
+                      <g id="sprout">
+                        <path id="sproutStem" class="trunk" d="M50,84 L50,84" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+                        <path id="sproutLeaf" class="leafFill" d="M50,82 C51,81.6 52,81.2 52,80.6 C52,80 51,80 50,80.4 C49,80.8 48,81.2 48,81.8 C48,82.4 49,82.4 50,82 Z" opacity="0"/>
+                      </g>
+                      <!-- Branches (drawn before trunk so trunk overlays edges) -->
+                      <g id="branches" stroke-linecap="round" fill="none" opacity="0">
+                        <path id="b1" class="branch" d="M50,74 C48,72 46,70 44,68" stroke-width="2.2"/>
+                        <path id="b2" class="branch" d="M50,70 C52,68 54,66 56,64" stroke-width="2.0"/>
+                        <path id="b3" class="branch" d="M50,65 C48,63 46,61 44,59" stroke-width="1.9"/>
+                        <path id="b4" class="branch" d="M50,61 C52,59 54,57 56,55" stroke-width="1.7"/>
+                      </g>
+                      <!-- Trunk (filled shape overlays branches for clean edge) -->
+                      <path id="trunkFill" class="trunkFill" d="M48,84 L52,84 L52,84 L48,84 Z" clip-path="url(#aboveGroundClip)"/>
+                      <!-- Canopy -->
+                      <g id="canopy" opacity="0">
+                        <circle id="c1" class="leafFill"  cx="50" cy="56" r="0"/>
+                        <circle id="c2" class="leafFill"  cx="43" cy="58" r="0"/>
+                        <circle id="c3" class="leafFill"  cx="57" cy="58" r="0"/>
+                        <circle id="c4" class="leafShade" cx="46" cy="52" r="0"/>
+                        <circle id="c5" class="leafShade" cx="54" cy="52" r="0"/>
+                        <circle id="c6" class="leafFill"  cx="39" cy="55" r="0"/>
+                        <circle id="c7" class="leafFill"  cx="61" cy="55" r="0"/>
+                        <circle id="c8" class="leafShade" cx="45" cy="60" r="0"/>
+                        <circle id="c9" class="leafShade" cx="55" cy="60" r="0"/>
+                      </g>
+                      <!-- Top highlight -->
+                      <g id="shine" opacity="0">
+                        <circle cx="47" cy="53" r="10" fill="rgba(255,255,255,.12)"/>
+                      </g>
+                    </g>
+                  </svg>
+                </div>
+            </div>
+            <div class="tree-kpis">
+                <div class="k"><div class="label">Saved</div><div class="value" id="savedNow">$0.00</div></div>
+                <div class="k"><div class="label">Goal</div><div class="value" id="savedGoal">$0.00</div></div>
+                <div class="k"><div class="label">Progress</div><div class="value" id="savedPct">0%</div></div>
+            </div>
+            <div class="tree-controls">
+                <div class="input-group">
+                    <label for="savingsGoalInput">Savings Goal ($)</label>
+                    <input type="number" id="savingsGoalInput" step="0.01" placeholder="e.g., 5000.00" />
+                </div>
+                <button class="btn" id="setSavingsGoalBtn">Set Goal</button>
+                <div></div>
+                <div class="input-group">
+                    <label for="savingsAmountInput">Amount ($)</label>
+                    <input type="number" id="savingsAmountInput" step="0.01" placeholder="0.00" />
+                </div>
+                <button class="btn" id="depositSavingsBtn">Deposit</button>
+                <button class="delete-btn" id="withdrawSavingsBtn">Withdraw</button>
+            </div>
+            <div class="help-text" style="margin-top:8px;">Deposits move money from Balance into Savings. Withdrawals move it back to Balance.</div>
+        </div>
     </div>
 
     <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
@@ -846,13 +1095,16 @@
             expenses: [],
             categories: {},
             checks: [],
-            balance: 0
+            balance: 0,
+            planned: []
         };
 
         function saveData() {
             try {
                 localStorage.setItem('financialData', JSON.stringify(financialData));
                 localStorage.setItem('balance', String(financialData.balance));
+                localStorage.setItem('savings', String(financialData.savings || 0));
+                localStorage.setItem('savingsGoal', String(financialData.savingsGoal || 0));
             } catch (e) {
                 console.error('Failed to save data', e);
             }
@@ -864,11 +1116,24 @@
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     Object.assign(financialData, parsed);
+                    if (!Array.isArray(financialData.planned)) financialData.planned = [];
+                    if (typeof financialData.savings !== 'number') {
+                        const s = parseFloat(localStorage.getItem('savings')||'');
+                        financialData.savings = isNaN(s)?0:s;
+                    }
+                    if (typeof financialData.savingsGoal !== 'number') {
+                        const g = parseFloat(localStorage.getItem('savingsGoal')||'');
+                        financialData.savingsGoal = isNaN(g)?0:g;
+                    }
                 } else {
                     const savedBalance = localStorage.getItem('balance');
                     if (savedBalance !== null) {
                         financialData.balance = parseFloat(savedBalance) || 0;
                     }
+                    const s = parseFloat(localStorage.getItem('savings')||'');
+                    financialData.savings = isNaN(s)?0:s;
+                    const g = parseFloat(localStorage.getItem('savingsGoal')||'');
+                    financialData.savingsGoal = isNaN(g)?0:g;
                 }
             } catch (e) {
                 console.error('Failed to load data', e);
@@ -1033,6 +1298,7 @@
             renderChecks();
             showToast(`Added check #${number} for $${amount.toFixed(2)}`, 'info');
             burst(ev);
+            updateAdvisor();
         }
 
         function deleteCheck(id) {
@@ -1042,6 +1308,7 @@
                 updateIncomeFromChecks();
                 renderChecks();
                 showToast('Deleted check', 'warn');
+                updateAdvisor();
             }
         }
 
@@ -1128,6 +1395,7 @@
             if (bInput) bInput.value = String(financialData.balance.toFixed(2));
             animateValue('balanceDisplay', financialData.balance);
             updateBalanceClass();
+            updateAdvisor();
             saveData();
         }
 
@@ -1151,6 +1419,7 @@
                 if (bInput) bInput.value = String(financialData.balance.toFixed(2));
                 animateValue('balanceDisplay', financialData.balance);
                 updateBalanceClass();
+                updateAdvisor();
                 saveData();
             }
         }
@@ -1241,6 +1510,7 @@
             updateDisplay();
             renderExpenses();
             renderFilterChips();
+            updateAdvisor();
             showToast('Expense updated', 'success');
             saveData();
         }
@@ -1398,6 +1668,8 @@
 
             popMetrics();
             updateBalanceClass();
+            // Advisor stays in sync
+            updateAdvisor();
         }
 
         // List controls events
@@ -1853,6 +2125,257 @@
         function tick() { phase += 0.8; refreshGauge(); requestAnimationFrame(tick); }
         tick();
         updateDisplay();
+        // Initialize advisor controls
+        (function initAdvisor(){
+            const reserveInput = document.getElementById('reservePercent');
+            const applyBtn = document.getElementById('applyReserveBtn');
+            const addBtn = document.getElementById('addPlannedBtn');
+            const nameEl = document.getElementById('plannedName');
+            const amtEl = document.getElementById('plannedAmount');
+            let reserve = parseFloat(localStorage.getItem('reservePercent')||'');
+            if (isNaN(reserve)) reserve = 20;
+            if (reserveInput) reserveInput.value = String(reserve);
+            function setReserve(){
+                const v = parseFloat(reserveInput.value);
+                if (!isNaN(v) && v >= 0) { localStorage.setItem('reservePercent', String(v)); updateAdvisor(); showToast('Reserve updated', 'info'); }
+            }
+            if (applyBtn) applyBtn.addEventListener('click', setReserve);
+            if (reserveInput) reserveInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setReserve(); });
+            if (addBtn) addBtn.addEventListener('click', ()=>{
+                const n = (nameEl?.value || '').trim();
+                const a = parseFloat(amtEl?.value);
+                if (!n) { showToast('Enter a planned name', 'error'); return; }
+                if (isNaN(a) || a<=0) { showToast('Enter a valid amount', 'error'); return; }
+                financialData.planned.push({ id: Date.now(), name: n, amount: a });
+                if (nameEl) nameEl.value = '';
+                if (amtEl) amtEl.value = '';
+                renderPlanned();
+                updateAdvisor();
+                saveData();
+            });
+            renderPlanned();
+            updateAdvisor();
+        })();
+
+        // Savings Tree (SVG) logic + integration
+        const savingsGoalBtn = document.getElementById('setSavingsGoalBtn');
+        const goalInput = document.getElementById('savingsGoalInput');
+        const amtInput = document.getElementById('savingsAmountInput');
+        const depositBtn = document.getElementById('depositSavingsBtn');
+        const withdrawBtn = document.getElementById('withdrawSavingsBtn');
+        const treeWrap = document.getElementById('SavingsTree');
+        function fmtMoney(n){ return '$' + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+        function savingsPercent(){ const g = parseFloat(financialData.savingsGoal)||0; const s = parseFloat(financialData.savings)||0; if(!g) return 0; return Math.max(0, Math.min(100, (s/g)*100)); }
+        function refreshTreeKPIs(){
+            const s = parseFloat(financialData.savings)||0;
+            const g = parseFloat(financialData.savingsGoal)||0;
+            const pct = savingsPercent();
+            const a = document.getElementById('savedNow'); if (a) a.textContent = fmtMoney(s);
+            const b = document.getElementById('savedGoal'); if (b) b.textContent = fmtMoney(g);
+            const c = document.getElementById('savedPct'); if (c) c.textContent = Math.round(pct) + '%';
+        }
+        let ST = null; // internal tree state
+        function initSavingsTree(){
+            if (!treeWrap) return;
+            const seed = treeWrap.querySelector('#seed');
+            const sproutStem = treeWrap.querySelector('#sproutStem');
+            const sproutLeaf = treeWrap.querySelector('#sproutLeaf');
+            const trunkFill = treeWrap.querySelector('#trunkFill');
+            const branches = treeWrap.querySelector('#branches');
+            const canopy = treeWrap.querySelector('#canopy');
+            const shine = treeWrap.querySelector('#shine');
+            const canopyCircles = Array.from(canopy.querySelectorAll('circle'));
+            const groundShadow = treeWrap.querySelector('#groundShadow');
+            const treeGroup = treeWrap.querySelector('#treeGroup');
+            const ease = (t)=> t<0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+            const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+            ST = { progress:0, raf:0, start:0, from:0, to:0,
+                updateVisual(p){
+                    ST.progress = clamp(p,0,1);
+                    // overall growth scale around base (50,84)
+                    const gs = 0.80 + ST.progress * 0.50; // 0.80..1.30 (taller overall)
+                    if (treeGroup) treeGroup.setAttribute('transform', `translate(50 84) scale(${gs.toFixed(3)}) translate(-50 -84)`);
+                    // seed fades
+                    const seedScale = 1 - ST.progress*1.1; if (seed) { seed.style.opacity = String(clamp(seedScale,0,1)); seed.style.display = (ST.progress > 0.25) ? 'none' : ''; }
+                    // sprout phase (0..0.25)
+                    const sprPhase = clamp(ST.progress/0.25, 0, 1);
+                    const sprHeight = 84 - sprPhase*10;
+                    if (sproutStem) sproutStem.setAttribute('d', `M50,84 L50,${sprHeight.toFixed(2)}`);
+                    if (sproutLeaf) sproutLeaf.setAttribute('opacity', String(sprPhase));
+                    const spr = treeWrap.querySelector('#sprout'); if (spr) spr.style.display = (ST.progress > 0.35) ? 'none' : '';
+                    // trunk tapered fill
+                    const trunkPhase = clamp((ST.progress - 0.15) / 0.75, 0, 1);
+                    const topY = 84 - trunkPhase*44; // even taller trunk
+                    const baseHalf = 2.6 + trunkPhase*3.1; // thicker base
+                    const topHalf  = 1.1 + trunkPhase*1.4; // wider top
+                    const leftTop  = (50 - topHalf).toFixed(2);
+                    const rightTop = (50 + topHalf).toFixed(2);
+                    const leftBase = (50 - baseHalf).toFixed(2);
+                    const rightBase= (50 + baseHalf).toFixed(2);
+                    const cY = (Number(topY)+84)/2;
+                    const d = [
+                      `M ${leftBase},84`,
+                      `Q ${leftTop},${cY.toFixed(2)} ${leftTop},${topY.toFixed(2)}`,
+                      `L ${rightTop},${topY.toFixed(2)}`,
+                      `Q ${rightTop},${cY.toFixed(2)} ${rightBase},84`,
+                      `Z`
+                    ].join(' ');
+                    if (trunkFill) trunkFill.setAttribute('d', d);
+                    // branches (follow trunk and fade in sooner)
+                    if (branches) {
+                        const brPhase = clamp((ST.progress - 0.25)/0.55, 0, 1);
+                        branches.setAttribute('opacity', String(brPhase));
+                        // lift branches to stay closer to trunk top
+                        const baseBranchAnchor = 68; // original average branch y
+                        const branchDy = (topY - baseBranchAnchor) * brPhase;
+                        branches.setAttribute('transform', `translate(0 ${branchDy.toFixed(2)})`);
+                    }
+                    // canopy grows in unison with trunk and anchors near trunk top
+                    const canopyPhase = clamp((ST.progress - 0.12)/0.70, 0, 1);
+                    if (canopy) {
+                        canopy.setAttribute('opacity', String(canopyPhase));
+                        const canopyDy = (topY - 56) * canopyPhase; // 56 is canopy base y
+                        canopy.setAttribute('transform', `translate(0 ${canopyDy.toFixed(2)})`);
+                        if (shine) shine.setAttribute('transform', `translate(0 ${canopyDy.toFixed(2)})`);
+                    }
+                    if (shine) shine.setAttribute('opacity', String(canopyPhase*0.7));
+                    const baseR = 5 + canopyPhase*14; // fuller, larger crown
+                    const settle = 1 + Math.sin(performance.now()/350)*0.02*(1 - (1-canopyPhase));
+                    const jitter = [1.00, 0.92, 0.95, 0.88, 0.90, 1.05, 1.03, 0.97, 0.96];
+                    canopyCircles.forEach((c,i)=>{
+                        if (!c.dataset.cx0) { c.dataset.cx0 = c.getAttribute('cx'); c.dataset.cy0 = c.getAttribute('cy'); }
+                        const r = baseR * jitter[i % jitter.length] * (1 - i*0.05) * settle;
+                        c.setAttribute('r', r.toFixed(2));
+                        const baseCx = parseFloat(c.dataset.cx0);
+                        const baseCy = parseFloat(c.dataset.cy0);
+                        const wind = Math.sin(performance.now()/900)*0.6;
+                        const swayX = wind * (0.4 + (i%3)*0.2);
+                        const swayY = Math.cos(performance.now()/1100 + i)*0.3;
+                        c.setAttribute('cx', (baseCx + swayX).toFixed(2));
+                        c.setAttribute('cy', (baseCy + swayY).toFixed(2));
+                    });
+                    // ground shadow
+                    if (groundShadow) {
+                        const rx = 5 + canopyPhase*14;
+                        groundShadow.setAttribute('rx', rx.toFixed(2));
+                        groundShadow.setAttribute('opacity', (0.05 + canopyPhase*0.25).toFixed(2));
+                    }
+                },
+                animateTo(target){
+                    const targetP = clamp(target,0,1);
+                    if (ST.raf) cancelAnimationFrame(ST.raf);
+                    ST.start = performance.now(); ST.from = ST.progress; ST.to = targetP;
+                    const growing = targetP >= ST.from;
+                    const dur = growing ? 1200 : 950; // grow a touch slower; shrink slightly snappier
+                    const step = (now)=>{
+                        const t = Math.min(1, (now - ST.start)/dur);
+                        // Smooth sine ease for seamless motion
+                        const easeInOut = (1 - Math.cos(Math.PI * t)) / 2;
+                        const p = ST.from + (ST.to - ST.from) * easeInOut;
+                        ST.updateVisual(p);
+                        if (t<1) ST.raf = requestAnimationFrame(step); else ST.raf = 0;
+                    };
+                    ST.raf = requestAnimationFrame(step);
+                }
+            };
+            // initial draw
+            ST.updateVisual(0);
+        }
+        function refreshSavingsTree(immediate){
+            refreshTreeKPIs();
+            if (!ST) return;
+            const g = parseFloat(financialData.savingsGoal)||0;
+            const s = parseFloat(financialData.savings)||0;
+            const p = g>0 ? s/g : 0;
+            if (immediate) ST.updateVisual(p); else ST.animateTo(p);
+        }
+        function setSavingsGoal(){
+            const v = parseFloat(goalInput?.value);
+            if (isNaN(v) || v <= 0) { showToast('Enter a valid savings goal', 'error'); return; }
+            financialData.savingsGoal = v; saveData(); refreshSavingsTree(true); showToast('Savings goal set','success');
+        }
+        function depositSavings(){
+            const amt = parseFloat(amtInput?.value);
+            if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
+            const bal = parseFloat(financialData.balance)||0;
+            if (amt > bal) { showToast('Not enough balance to deposit', 'error'); return; }
+            financialData.balance = bal - amt;
+            financialData.savings = (parseFloat(financialData.savings)||0) + amt;
+            const bInput = document.getElementById('balanceInput'); if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+            animateValue('balanceDisplay', financialData.balance);
+            updateBalanceClass();
+            saveData(); refreshSavingsTree(false); updateAdvisor(); showToast('Deposited to savings','success');
+        }
+        function withdrawSavings(){
+            const amt = parseFloat(amtInput?.value);
+            if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
+            const s = parseFloat(financialData.savings)||0;
+            if (amt > s) { showToast('Amount exceeds savings', 'error'); return; }
+            financialData.savings = s - amt;
+            financialData.balance = (parseFloat(financialData.balance)||0) + amt;
+            const bInput = document.getElementById('balanceInput'); if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+            animateValue('balanceDisplay', financialData.balance);
+            updateBalanceClass();
+            saveData(); refreshSavingsTree(false); updateAdvisor(); showToast('Withdrew from savings','warn');
+        }
+        if (goalInput) goalInput.value = String((parseFloat(financialData.savingsGoal)||0).toFixed(2));
+        if (savingsGoalBtn) savingsGoalBtn.addEventListener('click', setSavingsGoal);
+        if (goalInput) goalInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setSavingsGoal(); });
+        if (depositBtn) depositBtn.addEventListener('click', depositSavings);
+        if (withdrawBtn) withdrawBtn.addEventListener('click', withdrawSavings);
+        initSavingsTree();
+        refreshSavingsTree(true);
+
+        function renderPlanned(){
+            const list = document.getElementById('plannedList');
+            if (!list) return;
+            list.innerHTML = '';
+            (financialData.planned||[]).forEach(p => {
+                const row = document.createElement('div');
+                row.className = 'planned-item';
+                row.dataset.id = String(p.id);
+                row.innerHTML = `
+                    <div class="name">${(p.name||'').replace(/"/g,'&quot;')}</div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <div class="amt">$${(parseFloat(p.amount)||0).toFixed(2)}</div>
+                        <button class="delete-btn" onclick="deletePlanned(${p.id})">Delete</button>
+                    </div>`;
+                list.appendChild(row);
+            });
+        }
+
+        function deletePlanned(id){
+            const idx = (financialData.planned||[]).findIndex(p=>p.id===id);
+            if (idx>=0) { financialData.planned.splice(idx,1); renderPlanned(); updateAdvisor(); saveData(); showToast('Planned removed','warn'); }
+        }
+
+        function updateAdvisor(){
+            try {
+                const reservePct = parseFloat(localStorage.getItem('reservePercent')||'');
+                const pct = (!isNaN(reservePct) ? reservePct : 20) / 100;
+                const income = parseFloat(financialData.income)||0;
+                const balance = parseFloat(financialData.balance)||0;
+                const planned = (financialData.planned||[]).reduce((s,p)=> s + (parseFloat(p.amount)||0), 0);
+                const reserve = Math.max(0, income * pct);
+                let safe = balance - planned - reserve;
+                if (!isFinite(safe)) safe = 0;
+                safe = Math.max(0, safe);
+                const now = new Date();
+                const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+                const day = now.getDate();
+                const daysLeft = Math.max(1, daysInMonth - day + 1);
+                const perDay = safe / daysLeft;
+                const fmt = (n)=> '$' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+                const safeEl = document.getElementById('kpiSafeNow');
+                const perDayEl = document.getElementById('kpiPerDay');
+                const resEl = document.getElementById('kpiReserve');
+                const planEl = document.getElementById('kpiPlanned');
+                if (safeEl) safeEl.textContent = fmt(safe);
+                if (perDayEl) perDayEl.textContent = fmt(perDay);
+                if (resEl) resEl.textContent = fmt(reserve);
+                if (planEl) planEl.textContent = fmt(planned);
+            } catch {}
+        }
     </script>
 </body>
 </html>
