@@ -193,7 +193,7 @@
             text-align: center;
             position: relative;
             overflow: visible; /* allow tooltips to escape the card */
-            min-height: 180px;
+            min-height: 160px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -223,8 +223,8 @@
         }
 
         .metric-value {
-            font-size: 2.5rem;
-            font-weight: bold;
+            font-size: clamp(1.6rem, 5.5vw, 2.4rem);
+            font-weight: 800;
             margin: 10px 0;
             transition: transform 0.3s ease;
         }
@@ -243,7 +243,7 @@
 
         .metric-label {
             color: var(--muted);
-            font-size: 0.9rem;
+            font-size: clamp(0.85rem, 2.2vw, 1rem);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -683,12 +683,20 @@
         .toast.error { background: linear-gradient(135deg, #ef4444, #7f1d1d); }
 
         /* Info tooltip icon */
-        .info { display:inline-flex; align-items:center; justify-content:center; width:1.05em; height:1.05em; border-radius:50%; background: var(--surface); color: var(--muted); border:1px solid var(--border); font-size:0.85em; margin-left:6px; cursor:help; position:relative; user-select:none; }
-        .metric-card .info { position: absolute; right: 10px; top: 10px; font-size: 0.8em; width: 1.2em; height: 1.2em; }
+        .info { display:inline-flex; align-items:center; justify-content:center; width:1.1em; height:1.1em; border-radius:50%; background: var(--surface); color: var(--muted); border:1px solid var(--border); font-size:0.85em; margin-left:6px; cursor:help; position:relative; user-select:none; }
+        .metric-card .info { position: absolute; right: 10px; top: 10px; font-size: 0.85em; width: 1.2em; height: 1.2em; }
         .info:hover { color: var(--text); }
         .info:focus { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
         .info::after { content: attr(data-tip); position:absolute; left:50%; transform: translate(-50%, -8px); bottom: 130%; background: var(--toast-bg); color: var(--toast-text); padding:8px 10px; border-radius:10px; white-space: normal; text-align:left; min-width: 180px; max-width: 260px; pointer-events: none; opacity: 0; transition: opacity .15s ease; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
         .info:hover::after, .info:focus::after, .info[data-open="1"]::after { opacity: 1; }
+
+        /* KPI sizing (mobile friendly) */
+        .advisor .kpi .value { font-size: clamp(1.05rem, 4.2vw, 1.25rem); }
+        .advisor .kpi .label { font-size: clamp(0.8rem, 2.5vw, 0.9rem); }
+
+        @media (max-width: 640px) {
+            .metric-card { min-height: 140px; }
+        }
 
         /* Ripple */
         .btn { position: relative; overflow: hidden; }
@@ -830,7 +838,7 @@
             </div>
             <div class="card metric-card">
                 <div class="metric-label">Account Balance</div>
-                <span class="info" tabindex="0" aria-label="What is Balance?" data-tip="What you have right now. You can update it above.">ⓘ</span>
+                <span class="info" tabindex="0" aria-label="What is Balance?" data-tip="What you have right now. You can update it below.">ⓘ</span>
                 <div class="metric-value positive" id="balanceDisplay">$0</div>
             </div>
             <div class="card metric-card">
