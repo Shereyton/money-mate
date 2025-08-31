@@ -388,6 +388,10 @@
         .advisor .planned-item { display:flex; justify-content: space-between; align-items:center; padding:10px; border-radius:10px; background: var(--surface); border: 1px solid var(--border); margin-top:6px; }
         .advisor .planned-item .name { color: var(--text); font-weight: 700; overflow-wrap: anywhere; }
         .advisor .planned-item .amt { font-weight: 800; }
+        .advisor .explain { margin-top: 10px; border: 1px dashed var(--border); border-radius: 10px; padding: 10px; background: var(--surface); }
+        .advisor .explain .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 4px 0; }
+        .advisor .explain .label { color: var(--muted); font-weight: 700; }
+        .advisor .explain .value { color: var(--text); font-weight: 800; }
         @media (max-width: 640px) {
             .advisor .controls { grid-template-columns: 1fr; }
         }
@@ -965,6 +969,21 @@
                     <label for="reservePercent">Reserve for savings and buffer (%)</label>
                     <input type="number" id="reservePercent" min="0" max="90" step="1" placeholder="e.g., 20">
                 </div>
+                <div class="input-group">
+                    <label for="reserveBasis">Reserve basis</label>
+                    <select id="reserveBasis">
+                        <option value="balance">Balance</option>
+                        <option value="income">Income</option>
+                        <option value="both" selected>Balance + Income</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="useProjection">Use projected spend</label>
+                    <select id="useProjection">
+                        <option value="on" selected>On</option>
+                        <option value="off">Off</option>
+                    </select>
+                </div>
                 <button class="btn" id="applyReserveBtn">Apply</button>
             </div>
             <div class="planned">
@@ -975,7 +994,15 @@
                     <button class="btn" id="addPlannedBtn">Add Planned</button>
                 </div>
                 <div id="plannedList"></div>
-                <div class="help-text">Safe To Spend = Balance − Planned Upcoming − Reserve. Daily amount spreads it across the remaining days this month.</div>
+                <div class="help-text">Safe To Spend = Balance − Planned Upcoming − Reserve − Projected Remaining Spend (optional). Daily amount spreads across remaining days this month.</div>
+                <div class="explain" id="advisorExplain">
+                    <div class="row"><div class="label">Balance</div><div class="value" id="xBalance">$0.00</div></div>
+                    <div class="row"><div class="label">Reserve (<span id="xBasis">Both</span>)</div><div class="value" id="xReserve">$0.00</div></div>
+                    <div class="row"><div class="label">Planned Upcoming</div><div class="value" id="xPlanned">$0.00</div></div>
+                    <div class="row"><div class="label">Projected Remaining Spend</div><div class="value" id="xProjected">$0.00</div></div>
+                    <div class="row"><div class="label">Safe To Spend Now</div><div class="value" id="xSafe">$0.00</div></div>
+                    <div class="row"><div class="label">Per Day (to month end)</div><div class="value" id="xPerDay">$0.00</div></div>
+                </div>
             </div>
         </div>
 
@@ -2132,15 +2159,26 @@
             const addBtn = document.getElementById('addPlannedBtn');
             const nameEl = document.getElementById('plannedName');
             const amtEl = document.getElementById('plannedAmount');
+            const basisEl = document.getElementById('reserveBasis');
+            const projEl = document.getElementById('useProjection');
             let reserve = parseFloat(localStorage.getItem('reservePercent')||'');
             if (isNaN(reserve)) reserve = 20;
             if (reserveInput) reserveInput.value = String(reserve);
+            const savedBasis = localStorage.getItem('reserveBasis') || 'both';
+            if (basisEl) basisEl.value = savedBasis;
+            const savedProj = localStorage.getItem('useProjection') || 'on';
+            if (projEl) projEl.value = savedProj;
             function setReserve(){
                 const v = parseFloat(reserveInput.value);
-                if (!isNaN(v) && v >= 0) { localStorage.setItem('reservePercent', String(v)); updateAdvisor(); showToast('Reserve updated', 'info'); }
+                if (!isNaN(v) && v >= 0) { localStorage.setItem('reservePercent', String(v)); }
+                if (basisEl) localStorage.setItem('reserveBasis', basisEl.value || 'both');
+                if (projEl) localStorage.setItem('useProjection', projEl.value || 'on');
+                updateAdvisor(); showToast('Advisor updated', 'info');
             }
             if (applyBtn) applyBtn.addEventListener('click', setReserve);
             if (reserveInput) reserveInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') setReserve(); });
+            if (basisEl) basisEl.addEventListener('change', setReserve);
+            if (projEl) projEl.addEventListener('change', setReserve);
             if (addBtn) addBtn.addEventListener('click', ()=>{
                 const n = (nameEl?.value || '').trim();
                 const a = parseFloat(amtEl?.value);
@@ -2353,17 +2391,26 @@
             try {
                 const reservePct = parseFloat(localStorage.getItem('reservePercent')||'');
                 const pct = (!isNaN(reservePct) ? reservePct : 20) / 100;
+                const basis = localStorage.getItem('reserveBasis') || 'both';
+                const useProj = (localStorage.getItem('useProjection') || 'on') === 'on';
                 const income = parseFloat(financialData.income)||0;
                 const balance = parseFloat(financialData.balance)||0;
                 const planned = (financialData.planned||[]).reduce((s,p)=> s + (parseFloat(p.amount)||0), 0);
-                const reserve = Math.max(0, income * pct);
-                let safe = balance - planned - reserve;
+                // Reserve base selection
+                const reserveBase = basis === 'balance' ? balance : basis === 'income' ? income : (balance + income);
+                const reserve = Math.max(0, reserveBase * pct);
                 if (!isFinite(safe)) safe = 0;
-                safe = Math.max(0, safe);
                 const now = new Date();
                 const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
                 const day = now.getDate();
                 const daysLeft = Math.max(1, daysInMonth - day + 1);
+                const daysGone = Math.max(1, day - 1);
+                const mtd = (financialData.expenses||[]).reduce((s,e)=>{ const t=Number(e.id)||0; if(!t) return s; const d=new Date(t); return (d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth()) ? s + (parseFloat(e.amount)||0) : s; }, 0);
+                const daily = mtd / daysGone;
+                const projectedRemaining = useProj ? Math.max(0, daily * daysLeft) : 0;
+                let safe = balance - planned - reserve - projectedRemaining;
+                if (!isFinite(safe)) safe = 0;
+                safe = Math.max(0, safe);
                 const perDay = safe / daysLeft;
                 const fmt = (n)=> '$' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
                 const safeEl = document.getElementById('kpiSafeNow');
@@ -2374,6 +2421,14 @@
                 if (perDayEl) perDayEl.textContent = fmt(perDay);
                 if (resEl) resEl.textContent = fmt(reserve);
                 if (planEl) planEl.textContent = fmt(planned);
+                // breakdown
+                const bBal = document.getElementById('xBalance'); if (bBal) bBal.textContent = fmt(balance);
+                const bRes = document.getElementById('xReserve'); if (bRes) bRes.textContent = fmt(reserve);
+                const bPln = document.getElementById('xPlanned'); if (bPln) bPln.textContent = fmt(planned);
+                const bPrj = document.getElementById('xProjected'); if (bPrj) bPrj.textContent = fmt(projectedRemaining);
+                const bSafe = document.getElementById('xSafe'); if (bSafe) bSafe.textContent = fmt(safe);
+                const bPd = document.getElementById('xPerDay'); if (bPd) bPd.textContent = fmt(perDay);
+                const xBasis = document.getElementById('xBasis'); if (xBasis) xBasis.textContent = basis==='both'?'Both':basis[0].toUpperCase()+basis.slice(1);
             } catch {}
         }
     </script>
