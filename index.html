@@ -156,22 +156,23 @@
         .hero .tagline { opacity: .95; font-weight: 700; font-size: clamp(1rem, 3.2vw, 1.2rem); }
         .hero::before { /* moving gradient wave */
             content:""; position:absolute; inset: -40% -10%;
-            background: linear-gradient(90deg, var(--primary-gradient-start), var(--primary-gradient-end));
-            background-size: 200% 100%;
-            animation: waveMove 14s ease-in-out infinite;
-            filter: saturate(110%);
+            background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end), var(--primary-gradient-start));
+            background-size: 300% 300%;
+            animation: heroWave 16s ease-in-out infinite;
+            filter: saturate(115%);
+            will-change: background-position;
         }
         .hero::after { /* soft gloss */
             content:""; position:absolute; inset:0; pointer-events:none;
             background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.25), rgba(255,255,255,0) 60%);
             mix-blend-mode: screen; opacity:.45;
         }
-        @keyframes waveMove {
-            0%{ background-position: 0% 0; }
-            50%{ background-position: 100% 0; }
-            100%{ background-position: 0% 0; }
+        @keyframes heroWave {
+            0%{ background-position: 0% 50%; }
+            50%{ background-position: 100% 50%; }
+            100%{ background-position: 0% 50%; }
         }
-        @media (prefers-reduced-motion: reduce){ .hero::before{ animation: none; background-position: 50% 0; } }
+        @media (prefers-reduced-motion: reduce){ .hero::before{ animation: none; background-position: 50% 50%; } }
 
         .dashboard {
             display: grid;
