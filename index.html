@@ -1262,6 +1262,38 @@
             planned: []
         };
 
+        // Real-time Advisor sync helpers
+        let advisorTick = null;
+        function scheduleAdvisorUpdate(){
+            if (advisorTick) return;
+            advisorTick = requestAnimationFrame(()=>{ advisorTick = null; try { updateAdvisor(); } catch {} });
+        }
+        function observeArray(arr){
+            try {
+                const methods = ['push','pop','shift','unshift','splice','sort','reverse'];
+                methods.forEach(m => {
+                    const orig = arr[m];
+                    Object.defineProperty(arr, m, { configurable: true, writable: true, value: function(...args){ const out = orig.apply(this, args); try { scheduleAdvisorUpdate(); } catch {} return out; } });
+                });
+            } catch {}
+            return arr;
+        }
+        function observeFinancialData(fd){
+            if (Array.isArray(fd.expenses)) observeArray(fd.expenses);
+            if (Array.isArray(fd.checks)) observeArray(fd.checks);
+            if (Array.isArray(fd.planned)) observeArray(fd.planned);
+            const watched = new Set(['income','balance','savings','savingsGoal','categories']);
+            return new Proxy(fd, {
+                set(target, prop, value){
+                    target[prop] = value;
+                    if (prop === 'expenses' || prop === 'checks' || prop === 'planned') { if (Array.isArray(value)) observeArray(value); scheduleAdvisorUpdate(); return true; }
+                    if (watched.has(String(prop))) { scheduleAdvisorUpdate(); }
+                    return true;
+                }
+            });
+        }
+        financialData = observeFinancialData(financialData);
+
         function saveData() {
             try {
                 localStorage.setItem('financialData', JSON.stringify(financialData));
@@ -1943,6 +1975,12 @@
             modeNameEl.textContent = document.body.classList.contains('theme-sleek') ? 'Sleek' : 'Classic';
         }
         updateModeName();
+        // Cross-tab/local changes: recalc Advisor when relevant settings change
+        window.addEventListener('storage', (e)=>{
+            const keys = new Set(['financialData','reservePercent','reserveBasis','useProjection','advisorCycle','payFrequency','payAnchor','payMonthlyDay','nextPayDate','projectionMode','useCushionNow','cushionOverride']);
+            if (keys.has(e.key)) scheduleAdvisorUpdate();
+        });
+        document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) scheduleAdvisorUpdate(); });
 
         const prefersReduced = () => {
             try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
@@ -2191,6 +2229,10 @@
         Object.keys(financialData.categories || {}).forEach(cat => {
             if (!categoryColors[cat]) categoryColors[cat] = getRandomColor();
         });
+        // After normalization, (re)wrap arrays so mutations auto-update Advisor
+        if (Array.isArray(financialData.expenses)) observeArray(financialData.expenses);
+        if (Array.isArray(financialData.checks)) observeArray(financialData.checks);
+        if (Array.isArray(financialData.planned)) observeArray(financialData.planned);
         renderChecks();
         renderExpenses();
         renderFilterChips();
