@@ -687,8 +687,11 @@
         .metric-card .info { position: absolute; right: 10px; top: 10px; font-size: 0.85em; width: 1.2em; height: 1.2em; }
         .info:hover { color: var(--text); }
         .info:focus { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
-        .info::after { content: attr(data-tip); position:absolute; left:50%; transform: translate(-50%, -8px); bottom: 130%; background: var(--toast-bg); color: var(--toast-text); padding:8px 10px; border-radius:10px; white-space: normal; text-align:left; min-width: 180px; max-width: 260px; pointer-events: none; opacity: 0; transition: opacity .15s ease; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
-        .info:hover::after, .info:focus::after, .info[data-open="1"]::after { opacity: 1; }
+        /* Disable pseudo-tooltips; JS-managed layer used for better viewport clamp */
+        .info::after { content: none !important; }
+
+        /* Global tooltip layer (fixed to viewport) */
+        #tipLayer { position: fixed; z-index: 10000; pointer-events: none; background: var(--toast-bg); color: var(--toast-text); padding: 10px 12px; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); max-width: min(320px, 92vw); display: none; font-weight: 700; font-size: 0.9rem; }
 
         /* KPI sizing (mobile friendly) */
         .advisor .kpi .value { font-size: clamp(1.05rem, 4.2vw, 1.25rem); }
@@ -1143,6 +1146,7 @@
     </div>
 
     <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+    <div id="tipLayer" role="tooltip" aria-hidden="true"></div>
 
     <script>
         // Data storage
@@ -1896,17 +1900,41 @@
             setTimeout(() => ripple.remove(), 600);
         });
 
-        // Info tooltip toggle (tap/click)
-        document.addEventListener('click', function(e) {
-            const info = e.target.closest('.info');
-            if (!info) return;
-            // Close others
-            document.querySelectorAll('.info[data-open="1"]').forEach(el => { if (el !== info) el.removeAttribute('data-open'); });
-            const open = info.getAttribute('data-open') === '1';
-            if (open) info.removeAttribute('data-open'); else info.setAttribute('data-open','1');
-            e.stopPropagation();
-        });
-        document.addEventListener('keydown', function(e){ if (e.key === 'Escape') document.querySelectorAll('.info[data-open="1"]').forEach(el => el.removeAttribute('data-open')); });
+        // Info tooltip (viewport-clamped, fixed layer)
+        (function(){
+            const layer = document.getElementById('tipLayer');
+            let currentInfo = null;
+            function hideTip(){ if (layer){ layer.style.display='none'; layer.setAttribute('aria-hidden','true'); layer.textContent=''; } currentInfo=null; }
+            function showTip(info){
+                if (!layer || !info) return; const text = info.getAttribute('data-tip')||''; if (!text) return;
+                layer.textContent = text;
+                layer.style.display = 'block'; layer.setAttribute('aria-hidden','false');
+                // Position above the icon by default, clamp to viewport
+                const rect = info.getBoundingClientRect();
+                const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+                const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+                // Temporarily position to measure size
+                layer.style.left = '0px'; layer.style.top = '0px';
+                const lw = layer.offsetWidth; const lh = layer.offsetHeight;
+                let left = rect.left + rect.width/2 - lw/2;
+                const margin = 8;
+                left = Math.max(margin, Math.min(left, vw - lw - margin));
+                let top = rect.top - lh - 10; // above
+                if (top < margin) top = rect.bottom + 10; // place below if not enough room
+                layer.style.left = left + 'px';
+                layer.style.top = top + 'px';
+                currentInfo = info;
+            }
+            document.addEventListener('click', function(e){
+                const info = e.target.closest('.info');
+                if (!info) { hideTip(); return; }
+                if (currentInfo === info && layer && layer.style.display==='block') { hideTip(); return; }
+                showTip(info);
+            });
+            window.addEventListener('scroll', ()=>{ if (currentInfo) showTip(currentInfo); }, { passive:true });
+            window.addEventListener('resize', ()=>{ if (currentInfo) showTip(currentInfo); });
+            document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') hideTip(); });
+        })();
 
         // Card tilt effect
         function attachTilt() {
