@@ -2605,6 +2605,13 @@
             const periodDays = freq==='weekly'?7: freq==='biweekly'?14: freq==='semimonthly'? (next.getDate()===1?16:15) : 30; // rough for monthly
             const prev = new Date(next); prev.setDate(next.getDate()-periodDays); return startOfDay(prev);
         }
+        function sumExpensesBetween(start, end){
+            const s0 = startOfDay(start), e0 = startOfDay(end);
+            return (financialData.expenses||[]).reduce((sum,e)=>{
+                const t = Number(e.id)||0; if(!t) return sum; const d = new Date(t);
+                return (d >= s0 && d < e0) ? sum + (parseFloat(e.amount)||0) : sum;
+            }, 0);
+        }
         function updateAdvisor(){
             try {
                 const reservePct = parseFloat(localStorage.getItem('reservePercent')||'');
@@ -2616,7 +2623,7 @@
                 const planned = (financialData.planned||[]).reduce((s,p)=> s + (parseFloat(p.amount)||0), 0);
                 // Reserve base selection
                 const reserveBase = basis === 'balance' ? balance : basis === 'income' ? income : (balance + income);
-                const reserve = Math.max(0, reserveBase * pct);
+                let reserve = Math.max(0, reserveBase * pct);
                 const now = new Date();
                 const cycle = (localStorage.getItem('advisorCycle')||'month');
                 const freq = (localStorage.getItem('payFrequency')||'biweekly');
@@ -2641,12 +2648,20 @@
                     daysGone = Math.max(1, day - 1);
                 }
                 // Sum expenses in current period
-                const expInPeriod = (financialData.expenses||[]).reduce((s,e)=>{
-                    const t=Number(e.id)||0; if(!t) return s; const d=new Date(t);
-                    return (d >= periodStart && d < periodEnd) ? s + (parseFloat(e.amount)||0) : s;
-                }, 0);
-                const daily = expInPeriod / daysGone;
+                const expInPeriod = sumExpensesBetween(periodStart, now);
+                const dailyMTD = expInPeriod / Math.max(1, daysGone);
+                // Recent 7‑day (or since period start) smoothing
+                const sevenAgo = new Date(now); sevenAgo.setDate(now.getDate()-6);
+                const recentStart = startOfDay(sevenAgo < periodStart ? periodStart : sevenAgo);
+                const recentDays = Math.max(1, daysBetween(recentStart, startOfDay(now)));
+                const recentAmt = sumExpensesBetween(recentStart, now);
+                const dailyRecent = recentAmt / recentDays;
+                // Blend: favor recent if enough samples, otherwise MTD
+                const haveRecent = recentAmt > 0 && recentDays >= 2;
+                const daily = haveRecent ? (0.6 * dailyRecent + 0.4 * dailyMTD) : dailyMTD;
                 const projectedRemaining = useProj ? Math.max(0, daily * daysLeft) : 0;
+                // Cap reserve so it can't exceed available balance (prevents overshrink)
+                reserve = Math.min(reserve, Math.max(0, balance));
                 let safe = balance - planned - reserve - projectedRemaining;
                 if (!isFinite(safe)) safe = 0;
                 safe = Math.max(0, safe);
