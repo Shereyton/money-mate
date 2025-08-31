@@ -796,31 +796,31 @@
 
         <div class="dashboard">
             <div class="card metric-card">
-                <div class="metric-label">Monthly Income</div>
+                <div class="metric-label" title="Money you get this month (from income or checks)">Monthly Income</div>
                 <div class="metric-value neutral" id="incomeDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label">Yearly Estimate</div>
+                <div class="metric-label" title="Monthly income × 12">Yearly Estimate</div>
                 <div class="metric-value neutral" id="yearlyDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label">Total Expenses</div>
+                <div class="metric-label" title="What you have spent this month">Total Expenses</div>
                 <div class="metric-value negative" id="expensesDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label">Total Savings</div>
+                <div class="metric-label" title="Your current savings balance">Savings</div>
                 <div class="metric-value positive pulse" id="savingsDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label">Disposable Income</div>
+                <div class="metric-label" title="Income − Expenses (leftover this month)">Leftover This Month</div>
                 <div class="metric-value positive" id="disposableDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label">Account Balance</div>
+                <div class="metric-label" title="What you have right now">Account Balance</div>
                 <div class="metric-value positive" id="balanceDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label">Spend Rate</div>
+                <div class="metric-label" title="What percent of income you've spent">Spend Rate</div>
                 <div class="progress-ring" id="spendRing">
                     <svg width="120" height="120">
                         <circle class="ring-bg" cx="60" cy="60" r="52" stroke-width="12" fill="none" />
@@ -1197,10 +1197,10 @@
         function getCssVar(name) { return getComputedStyle(document.body).getPropertyValue(name).trim(); }
         function hexToRgba(hex, alpha) {
             const h = hex.replace('#','');
-            const bigint = parseInt(h, 16);
-            const r = (bigint >> 16) & 255;
-            const g = (bigint >> 8) & 255;
-            const b = bigint & 255;
+            const n = parseInt(h, 16);
+            const r = (n >> 16) & 255;
+            const g = (n >> 8) & 255;
+            const b = n & 255;
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
@@ -1661,15 +1661,15 @@
         // Update display function
         function updateDisplay() {
             const totalExpenses = financialData.expenses.reduce((sum, exp) => sum + exp.amount, 0);
-            const savings = Math.max(0, financialData.income * 0.2); // 20% savings goal
-            const disposable = Math.max(0, financialData.income - totalExpenses - savings);
-            const yearly = financialData.income * 12;
+            const actualSavings = Math.max(0, parseFloat(financialData.savings) || 0); // your real saved amount
+            const disposable = Math.max(0, (parseFloat(financialData.income) || 0) - totalExpenses); // simple: income − expenses
+            const yearly = (parseFloat(financialData.income) || 0) * 12;
 
             // Update metric displays with animation
             animateValue('incomeDisplay', financialData.income);
             animateValue('yearlyDisplay', yearly);
             animateValue('expensesDisplay', totalExpenses);
-            animateValue('savingsDisplay', savings);
+            animateValue('savingsDisplay', actualSavings);
             animateValue('disposableDisplay', disposable);
             if (typeof financialData.balance === 'number') {
                 animateValue('balanceDisplay', financialData.balance);
@@ -1677,9 +1677,9 @@
             
             // Update bar chart
             barChart.data.datasets[0].data = [
-                financialData.income,
+                parseFloat(financialData.income) || 0,
                 totalExpenses,
-                savings,
+                actualSavings,
                 disposable,
                 financialData.balance || 0
             ];
