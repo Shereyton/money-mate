@@ -571,15 +571,15 @@
         .gauge-label .big { font-size: 1.5rem; letter-spacing: 0.5px; line-height: 1.05; font-weight: 800; }
         .gauge-label .small { display: block; margin-top: 2px; font-size: 0.8rem; color: var(--muted); font-weight: 600; line-height: 1; }
 
-        /* Improve gauge label readability only in Classic Mode (non-sleek) */
+        /* Classic Mode: keep gauge label high-contrast on light background */
         body:not(.theme-sleek) .gauge-label .big {
-            color: #ffffff;
-            -webkit-text-stroke: 1px rgba(0,0,0,0.35);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+            color: var(--text); /* dark text for empty/low fill readability */
+            -webkit-text-stroke: 0; /* remove heavy edge on light bg */
+            text-shadow: none;
         }
         body:not(.theme-sleek) .gauge-label .small {
-            color: #ffffff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+            color: var(--muted);
+            text-shadow: none;
         }
 
         /* Sleek Mode: ensure strong contrast over vibrant waves */
