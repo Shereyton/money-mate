@@ -1012,11 +1012,11 @@
             <h2 style="margin-bottom: 10px; color: var(--text);">Spending Advisor</h2>
             <div class="grid" style="margin-bottom: 8px;">
                 <div class="kpi">
-                    <div class="label">Safe To Spend Today <span class="info" tabindex="0" aria-label="Safe To Spend Today" data-tip="What’s safe to spend after we set aside a cushion and your upcoming bills (and usual spending, if enabled).">ⓘ</span></div>
+                    <div class="label">Safe To Spend <span class="info" tabindex="0" aria-label="Safe To Spend" data-tip="What you can spend and still stay on track after setting aside a cushion and upcoming bills (and usual spending, if enabled).">ⓘ</span></div>
                     <div class="value" id="kpiSafeNow">$0.00</div>
                 </div>
                 <div class="kpi">
-                    <div class="label">Per Day <span class="info" tabindex="0" aria-label="Per Day" data-tip="Safe To Spend divided by the days left this month.">ⓘ</span></div>
+                    <div class="label">Per Day <span class="info" tabindex="0" aria-label="Per Day" data-tip="Safe To Spend divided by the days left in this period.">ⓘ</span></div>
                     <div class="value" id="kpiPerDay">$0.00</div>
                 </div>
                 <div class="kpi">
@@ -1106,7 +1106,7 @@
                     <div class="row"><div class="label">Expected rest‑of‑month</div><div class="value" id="xProjected">$0.00</div></div>
                     <div class="row"><div class="label">Days left in period</div><div class="value" id="xDaysLeft">0</div></div>
                     <div class="row"><div class="label">Daily pace used</div><div class="value" id="xDailyPace">$0.00/day</div></div>
-                    <div class="row"><div class="label">Safe to spend today</div><div class="value" id="xSafe">$0.00</div></div>
+                    <div class="row"><div class="label">Safe to spend</div><div class="value" id="xSafe">$0.00</div></div>
                     <div class="row"><div class="label">Per day</div><div class="value" id="xPerDay">$0.00</div></div>
                 </div>
             </div>
@@ -2789,6 +2789,14 @@
                 if (perDayEl) perDayEl.textContent = fmt(perDay);
                 if (resEl) resEl.textContent = fmt(reserve);
                 if (planEl) planEl.textContent = fmt(planned);
+                // Adjust Safe To Spend label to reflect period choice
+                if (safeEl && safeEl.previousElementSibling) {
+                    const lbl = safeEl.previousElementSibling; // .label
+                    const info = lbl.querySelector('.info');
+                    const base = (cycle==='paycheck') ? 'Safe To Spend (until next payday)' : 'Safe To Spend';
+                    lbl.textContent = base + ' ';
+                    if (info) lbl.appendChild(info);
+                }
                 // breakdown
                 const bBal = document.getElementById('xBalance'); if (bBal) bBal.textContent = fmt(balance);
                 const bRes = document.getElementById('xReserve'); if (bRes) bRes.textContent = fmt(reserve);
