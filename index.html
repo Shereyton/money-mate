@@ -547,6 +547,7 @@
         #balanceCanvas { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; }
         /* Gauge label (DOM overlay above canvas) */
         .gauge-label { position: absolute; left: 0; right: 0; top: var(--gauge-center-top, 50%); transform: translateY(-50%); text-align: center; color: var(--text); font-weight: 800; pointer-events: none; z-index: 2; }
+        .gauge-label .gauge-chip { display: inline-block; padding: 6px 10px; border-radius: 12px; backdrop-filter: saturate(120%) blur(2px); }
         .gauge-label .big { font-size: 1.5rem; letter-spacing: 0.5px; line-height: 1.05; font-weight: 800; }
         .gauge-label .small { display: block; margin-top: 2px; font-size: 0.8rem; color: var(--muted); font-weight: 600; line-height: 1; }
 
@@ -560,6 +561,7 @@
             color: #ffffff;
             text-shadow: 0 1px 2px rgba(0,0,0,0.35);
         }
+        body:not(.theme-sleek) .gauge-label .gauge-chip.low { background: rgba(0,0,0,0.35); }
 
         /* Sleek Mode: ensure strong contrast over vibrant waves */
         body.theme-sleek .gauge-label .big {
@@ -571,6 +573,7 @@
             color: #e2e8f0; /* light gray */
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
+        body.theme-sleek .gauge-label .gauge-chip.low { background: rgba(0,0,0,0.45); }
         .goal-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 14px; }
 
         /* Responsive form row for inputs */
@@ -957,8 +960,10 @@
                 <div class="liquid-wrap">
                     <canvas id="balanceCanvas" width="420" height="220"></canvas>
                     <div class="gauge-label">
-                        <span class="big" id="gaugeMain">0%</span>
-                        <span class="small" id="gaugeSub">of goal</span>
+                        <span class="gauge-chip">
+                            <span class="big" id="gaugeMain">0%</span>
+                            <span class="small" id="gaugeSub">of goal</span>
+                        </span>
                     </div>
                 </div>
                 <div class="goal-row">
@@ -2212,6 +2217,9 @@
                     newCenter = Math.max(minCenter, Math.min(newCenter, maxCenter));
                     label.style.setProperty('--gauge-center-top', `${newCenter}px`);
                 }
+                // Improve readability when gauge is low by enabling dark chip background
+                const chip = document.querySelector('.gauge-label .gauge-chip');
+                if (chip) chip.classList.toggle('low', percent < 30);
             }
         }
         function computePercent() {
