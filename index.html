@@ -494,8 +494,14 @@
 
         /* Chips */
         .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; margin-bottom: 4px; }
-        .chip { border: 1px solid var(--chip-border); background: var(--chip-bg); color: var(--text); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-weight: 700; letter-spacing:.2px; transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color .2s ease; }
-        .chip:hover { transform: translateY(-1px); }
+        .chip { 
+            border: 1px solid color-mix(in srgb, var(--chip-color, var(--primary)) 50%, var(--chip-border));
+            background: color-mix(in srgb, var(--chip-color, var(--primary)) 18%, transparent);
+            color: var(--text);
+            padding: 6px 12px; border-radius: 999px; cursor: pointer; font-weight: 700; letter-spacing:.2px;
+            transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color .2s ease;
+        }
+        .chip:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--chip-color, var(--primary)) 26%, transparent); }
         .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         /* Make active chip vivid and readable */
         .chip.active { 
@@ -504,15 +510,8 @@
             border-color: transparent;
             box-shadow: 0 6px 16px rgba(0,0,0,0.18);
         }
-        /* Theme-specific tuning for better contrast */
-        body.theme-sleek .chip { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.35); color: #e6edf6; box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
-        body.theme-sleek .chip:hover { background: rgba(255,255,255,0.12); }
-        body.theme-sleek .chip.active { box-shadow: 0 6px 18px rgba(0,0,0,0.35), inset 0 0 0 2px rgba(255,255,255,0.22); }
-        /* Classic mode: ensure the default (e.g., All) stands out */
-        body:not(.theme-sleek) .chip { background: #ffffff; border-color: #9ca3af; color: #111827; }
-        body:not(.theme-sleek) .chip:hover { background: #f3f4f6; }
         /* Specifically help the 'All' tab pop in Classic */
-        body:not(.theme-sleek) .chip[data-label="All"] { border-color: #4b5563; color: #111827; }
+        body:not(.theme-sleek) .chip[data-label="All"] { border-color: color-mix(in srgb, var(--primary) 55%, #9ca3af); }
         body:not(.theme-sleek) .chip[data-label="All"].active { box-shadow: 0 6px 16px rgba(17,24,39,0.15); }
 
         /* Link-styled button for subtle actions */
