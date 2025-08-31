@@ -1023,8 +1023,8 @@
             <div class="help-text" style="margin: 6px 0 8px;">Quick guide: We look at your balance, set aside a safety cushion, subtract upcoming bills (and typical spending for the rest of the month if enabled), and show what’s safe to spend.</div>
             <div class="controls">
                 <div class="input-group">
-                    <label for="reservePercent">Safety cushion (%)</label>
-                    <input type="number" id="reservePercent" min="0" max="90" step="1" placeholder="e.g., 20">
+                    <label for="reservePercent">Safety cushion (%) <span class="info" tabindex="0" aria-label="What is the Safety Cushion?" data-tip="We set aside this percent of your chosen basis (Balance, Income, or Both) so you don’t overspend. Higher = more savings, lower daily spend. Default is 30%.">ⓘ</span></label>
+                    <input type="number" id="reservePercent" min="0" max="90" step="1" placeholder="e.g., 30">
                 </div>
                 <button class="btn" id="applyReserveBtn">Apply</button>
             </div>
@@ -2324,7 +2324,10 @@
             const anchorEl = document.getElementById('payAnchor');
             const monDayEl = document.getElementById('payMonthlyDay');
             let reserve = parseFloat(localStorage.getItem('reservePercent')||'');
-            if (isNaN(reserve)) reserve = 20;
+            if (isNaN(reserve)) {
+                reserve = 30; // default cushion aims for stronger savings
+                try { localStorage.setItem('reservePercent', String(reserve)); } catch {}
+            }
             if (reserveInput) reserveInput.value = String(reserve);
             const savedBasis = localStorage.getItem('reserveBasis') || 'both';
             if (basisEl) basisEl.value = savedBasis;
@@ -2656,7 +2659,7 @@
         function updateAdvisor(){
             try {
                 const reservePct = parseFloat(localStorage.getItem('reservePercent')||'');
-                const pct = (!isNaN(reservePct) ? reservePct : 20) / 100;
+                const pct = (!isNaN(reservePct) ? reservePct : 30) / 100;
                 const basis = localStorage.getItem('reserveBasis') || 'both';
                 const useProj = (localStorage.getItem('useProjection') || 'on') === 'on';
                 const income = parseFloat(financialData.income)||0;
