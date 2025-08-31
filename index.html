@@ -1797,7 +1797,9 @@
                 const danger = getCssVar('--danger') || '#ef4444';
                 const success = getCssVar('--success') || '#10b981';
                 const accent = getCssVar('--accent') || '#a855f7';
-                const textColor = getCssVar('--text') || '#374151';
+                // In Sleek mode, enforce pure white for chart labels/numbers for maximal contrast
+                const isSleek = document.body.classList.contains('theme-sleek');
+                const textColor = isSleek ? '#ffffff' : (getCssVar('--text') || '#374151');
 
                 const bg = [
                     hexToRgba(primary, 0.8),
@@ -1815,10 +1817,24 @@
                 ];
                 barChart.data.datasets[0].backgroundColor = bg;
                 barChart.data.datasets[0].borderColor = border;
+                // Apply high-contrast tick/label colors per theme
+                if (barChart.options && barChart.options.scales) {
+                    if (barChart.options.scales.x && barChart.options.scales.x.ticks) {
+                        barChart.options.scales.x.ticks.color = textColor;
+                    }
+                    if (barChart.options.scales.y && barChart.options.scales.y.ticks) {
+                        barChart.options.scales.y.ticks.color = textColor;
+                    }
+                }
                 barChart.update('none');
 
                 // Update global text color for axes/legend/tooltips
                 Chart.defaults.color = textColor;
+                if (Chart.defaults.plugins && Chart.defaults.plugins.tooltip) {
+                    // Ensure tooltip text is readable across themes
+                    Chart.defaults.plugins.tooltip.titleColor = textColor;
+                    Chart.defaults.plugins.tooltip.bodyColor = textColor;
+                }
                 // Update gauge theme colors
                 if (typeof gaugeColors !== 'undefined') {
                     gaugeColors.primary = primary;
