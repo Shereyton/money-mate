@@ -386,7 +386,7 @@
         .advisor { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .advisor h3 { margin: 0 0 10px; color: var(--text); }
         /* Header container: keep tight vertical rhythm */
-        .advisor-header{ padding: .6rem .9rem; }
+        .advisor-header{ padding: .6rem .9rem; isolation: isolate; }
         /* Title + GIF sit next to each other, left-aligned */
         .advisor-title-row{ display:flex; align-items:center; gap:.5rem; flex-wrap:nowrap; max-width:100%; overflow:hidden; }
         /* Title styling */
@@ -405,6 +405,7 @@
         }
         /* Sleek (dark) mode: blend the GIF background into the card */
         body.theme-sleek .title-gif{ mix-blend-mode: darken; opacity: .98; filter: drop-shadow(0 0 0 rgba(0,0,0,0)); }
+        body.theme-sleek .gif-badge{ background: transparent; }
         .advisor .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
         .advisor .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
         .advisor .kpi .label { color: var(--muted); font-weight: 700; font-size: .85rem; }
