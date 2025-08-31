@@ -2415,7 +2415,16 @@
                 if (freqEl) localStorage.setItem('payFrequency', freqEl.value || 'biweekly');
                 if (anchorEl && anchorEl.value) localStorage.setItem('payAnchor', anchorEl.value);
                 if (monDayEl && monDayEl.value) localStorage.setItem('payMonthlyDay', String(parseInt(monDayEl.value,10)||15));
-                if (nextPayEl && nextPayEl.value) localStorage.setItem('nextPayDate', nextPayEl.value);
+                if (nextPayEl && nextPayEl.value) {
+                    localStorage.setItem('nextPayDate', nextPayEl.value);
+                }
+                // If switching to paycheck and no date provided, default to two weeks ahead
+                if ((cycleEl?.value||'month') === 'paycheck' && nextPayEl && !nextPayEl.value) {
+                    const d = new Date(); d.setDate(d.getDate()+14);
+                    const iso = d.toISOString().slice(0,10);
+                    nextPayEl.value = iso;
+                    try { localStorage.setItem('nextPayDate', iso); } catch {}
+                }
                 updatePayUi();
                 updateAdvisor();
             }
@@ -2643,7 +2652,12 @@
             if (idx>=0) { financialData.planned.splice(idx,1); renderPlanned(); updateAdvisor(); saveData(); showToast('Planned removed','warn'); }
         }
 
-        function daysBetween(a,b){ const MS=24*60*60*1000; return Math.max(0, Math.ceil((b.setHours(0,0,0,0)-a.setHours(0,0,0,0))/MS)); }
+        function daysBetween(a,b){
+            const MS=24*60*60*1000;
+            const a0 = new Date(a); a0.setHours(0,0,0,0);
+            const b0 = new Date(b); b0.setHours(0,0,0,0);
+            return Math.max(0, Math.ceil((b0 - a0)/MS));
+        }
         function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
         function parseDateInput(val){ if (!val) return null; const d=new Date(val+'T00:00:00'); return isNaN(+d)?null:d; }
         function getNextPayday(today, freq, anchor, monthlyDay){
@@ -2737,7 +2751,11 @@
                 const monDay = parseInt(localStorage.getItem('payMonthlyDay')||'15',10)||15;
                 let periodStart, periodEnd, daysLeft, daysGone;
                 const nextPayVal = localStorage.getItem('nextPayDate');
-                const nextPayCustom = parseDateInput(nextPayVal);
+                let nextPayCustom = parseDateInput(nextPayVal);
+                if (cycle==='paycheck' && !nextPayCustom) {
+                    // fallback: default to two weeks from today when no date selected
+                    const d = new Date(); d.setDate(d.getDate()+14); nextPayCustom = d;
+                }
                 if (cycle==='paycheck' && nextPayCustom) {
                     periodEnd = startOfDay(nextPayCustom);
                     const today0 = startOfDay(now);
