@@ -2014,6 +2014,21 @@
                 if (currentInfo === info && layer && layer.style.display==='block') { hideTip(); return; }
                 showTip(info);
             });
+            // Also support hover/focus for better discoverability
+            document.addEventListener('mouseover', function(e){
+                const info = e.target.closest('.info');
+                if (info) showTip(info);
+            });
+            document.addEventListener('mouseout', function(e){
+                if (e.target.closest && e.target.closest('.info')) hideTip();
+            });
+            document.addEventListener('focusin', function(e){
+                const info = e.target.closest && e.target.closest('.info');
+                if (info) showTip(info);
+            });
+            document.addEventListener('focusout', function(e){
+                if (e.target.closest && e.target.closest('.info')) hideTip();
+            });
             window.addEventListener('scroll', ()=>{ if (currentInfo) showTip(currentInfo); }, { passive:true });
             window.addEventListener('resize', ()=>{ if (currentInfo) showTip(currentInfo); });
             document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') hideTip(); });
@@ -2324,9 +2339,17 @@
             const anchorEl = document.getElementById('payAnchor');
             const monDayEl = document.getElementById('payMonthlyDay');
             let reserve = parseFloat(localStorage.getItem('reservePercent')||'');
+            const migrated = localStorage.getItem('reserveDefaultMigrated') === '1';
             if (isNaN(reserve)) {
                 reserve = 30; // default cushion aims for stronger savings
                 try { localStorage.setItem('reservePercent', String(reserve)); } catch {}
+            } else if (!migrated && reserve === 20) {
+                // Migrate old default (20%) to new default (30%) once
+                reserve = 30;
+                try { 
+                    localStorage.setItem('reservePercent', String(reserve));
+                    localStorage.setItem('reserveDefaultMigrated', '1');
+                } catch {}
             }
             if (reserveInput) reserveInput.value = String(reserve);
             const savedBasis = localStorage.getItem('reserveBasis') || 'both';
