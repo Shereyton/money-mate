@@ -2538,7 +2538,6 @@
                 // Reserve base selection
                 const reserveBase = basis === 'balance' ? balance : basis === 'income' ? income : (balance + income);
                 const reserve = Math.max(0, reserveBase * pct);
-                if (!isFinite(safe)) safe = 0;
                 const now = new Date();
                 const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
                 const day = now.getDate();
