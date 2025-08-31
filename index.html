@@ -400,6 +400,14 @@
         .advisor .explain .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 4px 0; }
         .advisor .explain .label { color: var(--muted); font-weight: 700; }
         .advisor .explain .value { color: var(--text); font-weight: 800; }
+        /* Advanced settings layout: tidy and responsive */
+        .advisor-advanced .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+        .advisor-advanced .input-group { margin: 0; }
+        .advisor-advanced .input-group label { white-space: normal; }
+        .advisor-advanced input, .advisor-advanced select { width: 100%; min-width: 0; }
+        @media (max-width: 640px) {
+            .advisor-advanced .form-row { grid-template-columns: 1fr !important; }
+        }
         /* Ensure planned inputs size well on all screens */
         .advisor .planned .form-row.planned-row { grid-template-columns: 2fr 1fr auto; }
         .form-row .input-group { min-width: 0; }
