@@ -389,6 +389,7 @@
         .advisor .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
         .advisor .kpi .label { color: var(--muted); font-weight: 700; font-size: .85rem; }
         .advisor .kpi .value { color: var(--text); font-weight: 800; font-size: 1.25rem; margin-top: 6px; }
+        .advisor .kpi .value.warn { color: var(--danger); }
         .advisor .controls { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-top: 12px; }
         .advisor .controls .input-group { margin: 0; }
         .advisor .controls input { padding: 10px 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; font-size: 16px; }
@@ -1089,6 +1090,24 @@
                         <input type="date" id="nextPayDate" />
                     </div>
                 </div>
+                <div class="form-row" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
+                    <div class="input-group">
+                        <label for="projectionMode">Projection mode</label>
+                        <select id="projectionMode">
+                            <option value="conservative">Conservative</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="aggressive">Aggressive</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="cushionOverride">Use cushion this period</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <label class="group-toggle" style="margin:0;"><input type="checkbox" id="useCushionNow"> Allow use</label>
+                            <input type="number" id="cushionOverride" step="0.01" min="0" placeholder="0.00" style="flex:1;">
+                        </div>
+                        <small id="cushionMaxLabel" style="color:var(--muted); font-weight:700;">Max: $0.00</small>
+                    </div>
+                </div>
             </details>
             <div class="planned">
                 <h3 style="margin: 12px 0 8px; color: var(--text); font-size:1.1rem;">Planned Upcoming Expenses</h3>
@@ -1102,10 +1121,14 @@
                 <div class="explain" id="advisorExplain">
                     <div class="row"><div class="label">Balance</div><div class="value" id="xBalance">$0.00</div></div>
                     <div class="row"><div class="label">Safety cushion (<span id="xBasis">Both</span>)</div><div class="value" id="xReserve">$0.00</div></div>
+                    <div class="row"><div class="label">Cushion used this period</div><div class="value" id="xCushionUsed">$0.00</div></div>
                     <div class="row"><div class="label">Upcoming bills</div><div class="value" id="xPlanned">$0.00</div></div>
                     <div class="row"><div class="label">Expected rest‑of‑month</div><div class="value" id="xProjected">$0.00</div></div>
                     <div class="row"><div class="label">Days left in period</div><div class="value" id="xDaysLeft">0</div></div>
                     <div class="row"><div class="label">Daily pace used</div><div class="value" id="xDailyPace">$0.00/day</div></div>
+                    <div class="row"><div class="label">Deficit vs cushion</div><div class="value" id="xDeficit">$0.00</div></div>
+                    <div class="row"><div class="label">Cut needed per day</div><div class="value" id="xCutPerDay">$0.00/day</div></div>
+                    <div class="row"><div class="label">Target daily pace</div><div class="value" id="xTargetPace">$0.00/day</div></div>
                     <div class="row"><div class="label">Safe to spend</div><div class="value" id="xSafe">$0.00</div></div>
                     <div class="row"><div class="label">Per day</div><div class="value" id="xPerDay">$0.00</div></div>
                 </div>
@@ -1238,6 +1261,38 @@
             balance: 0,
             planned: []
         };
+
+        // Real-time Advisor sync helpers
+        let advisorTick = null;
+        function scheduleAdvisorUpdate(){
+            if (advisorTick) return;
+            advisorTick = requestAnimationFrame(()=>{ advisorTick = null; try { updateAdvisor(); } catch {} });
+        }
+        function observeArray(arr){
+            try {
+                const methods = ['push','pop','shift','unshift','splice','sort','reverse'];
+                methods.forEach(m => {
+                    const orig = arr[m];
+                    Object.defineProperty(arr, m, { configurable: true, writable: true, value: function(...args){ const out = orig.apply(this, args); try { scheduleAdvisorUpdate(); } catch {} return out; } });
+                });
+            } catch {}
+            return arr;
+        }
+        function observeFinancialData(fd){
+            if (Array.isArray(fd.expenses)) observeArray(fd.expenses);
+            if (Array.isArray(fd.checks)) observeArray(fd.checks);
+            if (Array.isArray(fd.planned)) observeArray(fd.planned);
+            const watched = new Set(['income','balance','savings','savingsGoal','categories']);
+            return new Proxy(fd, {
+                set(target, prop, value){
+                    target[prop] = value;
+                    if (prop === 'expenses' || prop === 'checks' || prop === 'planned') { if (Array.isArray(value)) observeArray(value); scheduleAdvisorUpdate(); return true; }
+                    if (watched.has(String(prop))) { scheduleAdvisorUpdate(); }
+                    return true;
+                }
+            });
+        }
+        financialData = observeFinancialData(financialData);
 
         function saveData() {
             try {
@@ -1920,6 +1975,12 @@
             modeNameEl.textContent = document.body.classList.contains('theme-sleek') ? 'Sleek' : 'Classic';
         }
         updateModeName();
+        // Cross-tab/local changes: recalc Advisor when relevant settings change
+        window.addEventListener('storage', (e)=>{
+            const keys = new Set(['financialData','reservePercent','reserveBasis','useProjection','advisorCycle','payFrequency','payAnchor','payMonthlyDay','nextPayDate','projectionMode','useCushionNow','cushionOverride']);
+            if (keys.has(e.key)) scheduleAdvisorUpdate();
+        });
+        document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) scheduleAdvisorUpdate(); });
 
         const prefersReduced = () => {
             try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
@@ -2168,6 +2229,10 @@
         Object.keys(financialData.categories || {}).forEach(cat => {
             if (!categoryColors[cat]) categoryColors[cat] = getRandomColor();
         });
+        // After normalization, (re)wrap arrays so mutations auto-update Advisor
+        if (Array.isArray(financialData.expenses)) observeArray(financialData.expenses);
+        if (Array.isArray(financialData.checks)) observeArray(financialData.checks);
+        if (Array.isArray(financialData.planned)) observeArray(financialData.planned);
         renderChecks();
         renderExpenses();
         renderFilterChips();
@@ -2358,6 +2423,10 @@
             const rowCycleFreq = document.getElementById('rowCycleFreq');
             const rowAnchorMonthly = document.getElementById('rowAnchorMonthly');
             const rowNextPay = document.getElementById('rowNextPay');
+            const projModeEl = document.getElementById('projectionMode');
+            const useCushionEl = document.getElementById('useCushionNow');
+            const cushionAmtEl = document.getElementById('cushionOverride');
+            const cushionMaxEl = document.getElementById('cushionMaxLabel');
             let reserve = parseFloat(localStorage.getItem('reservePercent')||'');
             const migrated = localStorage.getItem('reserveDefaultMigrated') === '1';
             if (isNaN(reserve)) {
@@ -2386,6 +2455,12 @@
             if (monDayEl) monDayEl.value = String(isNaN(savedMonDay)?15:savedMonDay);
             const savedNextPay = localStorage.getItem('nextPayDate');
             if (nextPayEl && savedNextPay) nextPayEl.value = savedNextPay;
+            const savedProjMode = localStorage.getItem('projectionMode') || 'normal';
+            if (projModeEl) projModeEl.value = savedProjMode;
+            const savedUseCush = localStorage.getItem('useCushionNow') === '1';
+            if (useCushionEl) useCushionEl.checked = savedUseCush;
+            let savedCushAmt = parseFloat(localStorage.getItem('cushionOverride')||''); if (isNaN(savedCushAmt)) savedCushAmt = 0;
+            if (cushionAmtEl) cushionAmtEl.value = String(savedCushAmt.toFixed(2));
 
             function updatePayUi(){
                 const cyc = (cycleEl?.value||'month');
@@ -2433,6 +2508,9 @@
             if (anchorEl) anchorEl.addEventListener('change', saveCycle);
             if (monDayEl) monDayEl.addEventListener('input', saveCycle);
             if (nextPayEl) nextPayEl.addEventListener('change', saveCycle);
+            if (projModeEl) projModeEl.addEventListener('change', ()=>{ localStorage.setItem('projectionMode', projModeEl.value||'normal'); updateAdvisor(); });
+            if (useCushionEl) useCushionEl.addEventListener('change', ()=>{ localStorage.setItem('useCushionNow', useCushionEl.checked?'1':'0'); updateAdvisor(); });
+            if (cushionAmtEl) cushionAmtEl.addEventListener('input', ()=>{ let v=parseFloat(cushionAmtEl.value)||0; if (v<0) v=0; localStorage.setItem('cushionOverride', String(v)); updateAdvisor(); });
             if (addBtn) addBtn.addEventListener('click', ()=>{
                 const n = (nameEl?.value || '').trim();
                 const a = parseFloat(amtEl?.value);
@@ -2742,7 +2820,8 @@
                 const planned = (financialData.planned||[]).reduce((s,p)=> s + (parseFloat(p.amount)||0), 0);
                 // Reserve base selection
                 const reserveBase = basis === 'balance' ? balance : basis === 'income' ? income : (balance + income);
-                let reserve = Math.max(0, reserveBase * pct);
+                // Raw cushion (cap to balance)
+                const reserveRaw = Math.min(Math.max(0, reserveBase * pct), Math.max(0, balance));
                 const now = new Date();
                 const cycle = (localStorage.getItem('advisorCycle')||'month');
                 const freq = (localStorage.getItem('payFrequency')||'biweekly');
@@ -2790,11 +2869,18 @@
                 const robustRecent = (recentArr.length ? ( (isNaN(trimmed)?0:trimmed)*0.5 + (isNaN(expAvg)?0:expAvg)*0.5 ) : 0);
                 const recentWeight = Math.max(0.3, Math.min(1, recentArr.length/7));
                 const dailyRaw = recentArr.length ? (recentWeight*robustRecent + (1-recentWeight)*dailyMTD) : dailyMTD;
-                const daily = Math.max(0, isFinite(dailyRaw)?dailyRaw:0);
-                const projectedRemaining = useProj ? Math.max(0, daily * daysLeft) : 0;
-                // Cap reserve so it can't exceed available balance (prevents overshrink)
-                reserve = Math.min(reserve, Math.max(0, balance));
-                let safe = balance - planned - reserve - projectedRemaining;
+                const dailyBase = Math.max(0, isFinite(dailyRaw)?dailyRaw:0);
+                // Apply projection mode bias
+                const projMode = (localStorage.getItem('projectionMode')||'normal');
+                const bias = projMode==='conservative' ? 0.85 : projMode==='aggressive' ? 1.15 : 1.0;
+                const dailyUsed = dailyBase * bias;
+                const projectedRemaining = useProj ? Math.max(0, dailyUsed * daysLeft) : 0;
+                // Cushion override (temporary use this period)
+                const useCushNow = (localStorage.getItem('useCushionNow')||'0')==='1';
+                let cushAmt = parseFloat(localStorage.getItem('cushionOverride')||''); if (isNaN(cushAmt)) cushAmt = 0;
+                cushAmt = Math.max(0, Math.min(cushAmt, reserveRaw));
+                const reserveEff = Math.max(0, reserveRaw - (useCushNow ? cushAmt : 0));
+                let safe = balance - planned - reserveEff - projectedRemaining;
                 if (!isFinite(safe)) safe = 0;
                 safe = Math.max(0, safe);
                 const perDay = safe / daysLeft;
@@ -2805,7 +2891,7 @@
                 const planEl = document.getElementById('kpiPlanned');
                 if (safeEl) safeEl.textContent = fmt(safe);
                 if (perDayEl) perDayEl.textContent = fmt(perDay);
-                if (resEl) resEl.textContent = fmt(reserve);
+                if (resEl) resEl.textContent = fmt(reserveEff);
                 if (planEl) planEl.textContent = fmt(planned);
                 // Adjust Safe To Spend label to reflect period choice
                 if (safeEl && safeEl.previousElementSibling) {
@@ -2817,14 +2903,33 @@
                 }
                 // breakdown
                 const bBal = document.getElementById('xBalance'); if (bBal) bBal.textContent = fmt(balance);
-                const bRes = document.getElementById('xReserve'); if (bRes) bRes.textContent = fmt(reserve);
+                const bRes = document.getElementById('xReserve'); if (bRes) bRes.textContent = fmt(reserveEff);
+                const bCUsed = document.getElementById('xCushionUsed'); if (bCUsed) bCUsed.textContent = fmt(useCushNow ? cushAmt : 0);
                 const bPln = document.getElementById('xPlanned'); if (bPln) bPln.textContent = fmt(planned);
                 const bPrj = document.getElementById('xProjected'); if (bPrj) bPrj.textContent = fmt(projectedRemaining);
                 const bSafe = document.getElementById('xSafe'); if (bSafe) bSafe.textContent = fmt(safe);
                 const bPd = document.getElementById('xPerDay'); if (bPd) bPd.textContent = fmt(perDay);
                 const bDays = document.getElementById('xDaysLeft'); if (bDays) bDays.textContent = String(daysLeft);
-                const bPace = document.getElementById('xDailyPace'); if (bPace) bPace.textContent = fmt(daily) + '/day';
+                const deficit = Math.max(0, projectedRemaining + planned + reserveEff - balance);
+                const cutPerDay = deficit / daysLeft;
+                const targetPace = Math.max(0, dailyUsed - cutPerDay);
+                const bDef = document.getElementById('xDeficit'); if (bDef) bDef.textContent = fmt(deficit);
+                const bCut = document.getElementById('xCutPerDay'); if (bCut) bCut.textContent = fmt(cutPerDay) + '/day';
+                const bTP = document.getElementById('xTargetPace'); if (bTP) bTP.textContent = fmt(targetPace) + '/day';
+                const bPace = document.getElementById('xDailyPace'); if (bPace) bPace.textContent = fmt(dailyUsed) + '/day';
                 const xBasis = document.getElementById('xBasis'); if (xBasis) xBasis.textContent = basis==='both'?'Both':basis[0].toUpperCase()+basis.slice(1);
+                // Update cushion max label and input bounds
+                const cMax = document.getElementById('cushionMaxLabel'); if (cMax) cMax.textContent = 'Max: ' + fmt(reserveRaw);
+                const cAmt = document.getElementById('cushionOverride'); if (cAmt) {
+                    cAmt.max = String(reserveRaw.toFixed(2));
+                    let v = parseFloat(cAmt.value)||0; if (v > reserveRaw) { v = reserveRaw; cAmt.value = String(v.toFixed(2)); localStorage.setItem('cushionOverride', String(v)); }
+                }
+                // Warn style when Safe == 0 but deficit > 0
+                const safeKpi = document.getElementById('kpiSafeNow');
+                if (safeKpi) {
+                    if (deficit > 0 && safe <= 0.005) safeKpi.classList.add('warn'); else safeKpi.classList.remove('warn');
+                }
+                const perDayKpi = document.getElementById('kpiPerDay'); if (perDayKpi) { if (deficit>0 && safe<=0.005) perDayKpi.classList.add('warn'); else perDayKpi.classList.remove('warn'); }
             } catch {}
         }
     </script>
