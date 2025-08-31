@@ -682,6 +682,14 @@
         .toast.warn { background: linear-gradient(135deg, #f59e0b, #ef4444); }
         .toast.error { background: linear-gradient(135deg, #ef4444, #7f1d1d); }
 
+        /* Info tooltip icon */
+        .info { display:inline-flex; align-items:center; justify-content:center; width:1.05em; height:1.05em; border-radius:50%; background: var(--surface); color: var(--muted); border:1px solid var(--border); font-size:0.85em; margin-left:6px; cursor:help; position:relative; user-select:none; }
+        .metric-card .info { position: absolute; right: 10px; top: 10px; font-size: 0.8em; width: 1.2em; height: 1.2em; }
+        .info:hover { color: var(--text); }
+        .info:focus { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+        .info::after { content: attr(data-tip); position:absolute; left:50%; transform: translate(-50%, -8px); bottom: 130%; background: var(--toast-bg); color: var(--toast-text); padding:8px 10px; border-radius:10px; white-space: normal; text-align:left; min-width: 180px; max-width: 260px; pointer-events: none; opacity: 0; transition: opacity .15s ease; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+        .info:hover::after, .info:focus::after { opacity: 1; }
+
         /* Ripple */
         .btn { position: relative; overflow: hidden; }
         .ripple { position: absolute; border-radius: 50%; transform: scale(0); background: rgba(255,255,255,0.5); animation: ripple .6s linear; pointer-events: none; }
@@ -796,31 +804,38 @@
 
         <div class="dashboard">
             <div class="card metric-card">
-                <div class="metric-label" title="Money you get this month (from income or checks)">Monthly Income</div>
+                <div class="metric-label">Monthly Income</div>
+                <span class="info" tabindex="0" aria-label="What is Monthly Income?" data-tip="Money you get this month (from income or checks).">ⓘ</span>
                 <div class="metric-value neutral" id="incomeDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label" title="Monthly income × 12">Yearly Estimate</div>
+                <div class="metric-label">Yearly Estimate</div>
+                <span class="info" tabindex="0" aria-label="What is Yearly Estimate?" data-tip="Estimated yearly income: Monthly Income × 12.">ⓘ</span>
                 <div class="metric-value neutral" id="yearlyDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label" title="What you have spent this month">Total Expenses</div>
+                <div class="metric-label">Total Expenses</div>
+                <span class="info" tabindex="0" aria-label="What are Total Expenses?" data-tip="Sum of all the expenses you added for this period.">ⓘ</span>
                 <div class="metric-value negative" id="expensesDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label" title="Your current savings balance">Savings</div>
+                <div class="metric-label">Savings</div>
+                <span class="info" tabindex="0" aria-label="What are Savings?" data-tip="Your current savings balance (from the Savings Tree).">ⓘ</span>
                 <div class="metric-value positive pulse" id="savingsDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label" title="Income − Expenses (leftover this month)">Leftover This Month</div>
+                <div class="metric-label">Leftover This Month</div>
+                <span class="info" tabindex="0" aria-label="What is Leftover?" data-tip="Leftover = Monthly Income − Total Expenses. A simple monthly view.">ⓘ</span>
                 <div class="metric-value positive" id="disposableDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label" title="What you have right now">Account Balance</div>
+                <div class="metric-label">Account Balance</div>
+                <span class="info" tabindex="0" aria-label="What is Balance?" data-tip="What you have right now. You can update it above.">ⓘ</span>
                 <div class="metric-value positive" id="balanceDisplay">$0</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-label" title="What percent of income you've spent">Spend Rate</div>
+                <div class="metric-label">Spend Rate</div>
+                <span class="info" tabindex="0" aria-label="What is Spend Rate?" data-tip="Percent of income you've spent so far: Expenses ÷ Income.">ⓘ</span>
                 <div class="progress-ring" id="spendRing">
                     <svg width="120" height="120">
                         <circle class="ring-bg" cx="60" cy="60" r="52" stroke-width="12" fill="none" />
@@ -948,19 +963,19 @@
             <h2 style="margin-bottom: 10px; color: var(--text);">Spending Advisor</h2>
             <div class="grid" style="margin-bottom: 8px;">
                 <div class="kpi">
-                    <div class="label" title="Money you can safely spend today">Safe To Spend Today</div>
+                    <div class="label">Safe To Spend Today <span class="info" tabindex="0" aria-label="Safe To Spend Today" data-tip="What’s safe to spend after we set aside a cushion and your upcoming bills (and usual spending, if enabled).">ⓘ</span></div>
                     <div class="value" id="kpiSafeNow">$0.00</div>
                 </div>
                 <div class="kpi">
-                    <div class="label" title="Safe amount per remaining day this month">Per Day</div>
+                    <div class="label">Per Day <span class="info" tabindex="0" aria-label="Per Day" data-tip="Safe To Spend divided by the days left this month.">ⓘ</span></div>
                     <div class="value" id="kpiPerDay">$0.00</div>
                 </div>
                 <div class="kpi">
-                    <div class="label" title="Safety cushion set aside so you don't overspend">Safety Cushion</div>
+                    <div class="label">Safety Cushion <span class="info" tabindex="0" aria-label="Safety Cushion" data-tip="A percentage we set aside as a buffer so you don’t overspend.">ⓘ</span></div>
                     <div class="value" id="kpiReserve">$0.00</div>
                 </div>
                 <div class="kpi">
-                    <div class="label" title="Bills you added below">Upcoming Bills</div>
+                    <div class="label">Upcoming Bills <span class="info" tabindex="0" aria-label="Upcoming Bills" data-tip="Bills you add below in Planned Upcoming Expenses.">ⓘ</span></div>
                     <div class="value" id="kpiPlanned">$0.00</div>
                 </div>
             </div>
