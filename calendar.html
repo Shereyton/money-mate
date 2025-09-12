@@ -88,8 +88,10 @@
     .list { position:sticky; top:16px; }
     .list h3 { margin: 0 0 8px; }
     .items { display:flex; flex-direction:column; gap:8px; }
-    .item { display:flex; justify-content: space-between; align-items:center; background: var(--surface); border:1px solid var(--border); border-radius: 10px; padding: 10px; }
-    .cat { font-weight:800; padding: 2px 8px; border-radius: 999px; color: #fff; }
+    .item { display:flex; justify-content: space-between; align-items:center; gap: 10px; background: var(--surface); border:1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .item .left { display:flex; align-items:center; flex-wrap: wrap; gap:6px; min-width: 0; flex: 1 1 auto; }
+    .item .left .name { font-weight:800; min-width:0; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cat { font-weight:800; padding: 2px 8px; border-radius: 999px; color: #fff; flex: 0 0 auto; }
     .muted { color: var(--muted); font-weight: 700; }
   </style>
 </head>
@@ -301,8 +303,8 @@
       items.sort((a,b)=> (b.amount||0)-(a.amount||0));
       for (const e of items){
         const row = document.createElement('div'); row.className='item';
-        const left = document.createElement('div');
-        const nm = document.createElement('div'); nm.textContent = (e.name||''); nm.style.fontWeight='800';
+        const left = document.createElement('div'); left.className = 'left';
+        const nm = document.createElement('div'); nm.className = 'name'; nm.textContent = (e.name||'');
         const cat = document.createElement('span'); cat.className='cat'; cat.textContent = String(e.category||'Other'); cat.style.background = categoryColors[e.category]||getCssVar('--primary'); cat.style.marginLeft='6px';
         left.appendChild(nm); left.appendChild(cat);
         const amt = document.createElement('div'); amt.textContent = fmt(e.amount); amt.style.fontWeight='800';
