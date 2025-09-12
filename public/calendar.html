@@ -82,7 +82,7 @@
       .day { min-height: 0; padding: 4px; }
       .dow div { font-size: 0.78rem; padding: 6px; }
       .date { font-size: 0.85rem; padding: 0 4px; }
-      .total { display: none; }
+      .total { display: block; font-size: 0.65rem; padding: 0 3px; right: 3px; bottom: 3px; }
     }
     body.theme-sleek .day .date,
     body.theme-sleek .day .total { background: rgba(0,0,0,0.35); color: #f8fafc; text-shadow: 0 1px 2px rgba(0,0,0,0.65); }
@@ -291,7 +291,17 @@
         cell.appendChild(heat);
 
         const dateEl = document.createElement('div'); dateEl.className='date'; dateEl.textContent = String(date.getDate()); cell.appendChild(dateEl);
-        const totalEl = document.createElement('div'); totalEl.className='total'; totalEl.textContent = totals[k]? fmt(totals[k]) : ''; cell.appendChild(totalEl);
+        const totalEl = document.createElement('div'); totalEl.className='total';
+        if (totals[k]) {
+          const v = Number(totals[k])||0;
+          const w = Math.max(document.documentElement.clientWidth||0, window.innerWidth||0);
+          if (w <= 480) {
+            totalEl.textContent = (v>=1000000) ? ('$'+(v/1000000).toFixed(1).replace(/\.0$/,'')+'m') : (v>=1000 ? ('$'+(v/1000).toFixed(1).replace(/\.0$/,'')+'k') : ('$'+Math.round(v).toLocaleString()));
+          } else {
+            totalEl.textContent = fmt(v);
+          }
+        } else { totalEl.textContent = ''; }
+        cell.appendChild(totalEl);
         if (totals[k]) cell.classList.add('has-data');
         // Mark as hot when intensity crosses threshold for better text contrast
         if (intensity > 0.4) cell.classList.add('hot');
