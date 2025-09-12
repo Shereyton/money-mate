@@ -71,7 +71,7 @@
     .day:hover { outline: 2px solid var(--primary); outline-offset: -2px; cursor: pointer; }
     .date { position: absolute; top: 6px; left: 6px; z-index: 1; font-weight: 800; font-size: clamp(0.8rem, 2.8vw, 1rem); line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; display: inline-block; user-select: none; pointer-events: none; }
     .day.has-data .date { font-size: clamp(0.85rem, 2.8vw, 1rem); }
-    .total { position:absolute; left: 4px; right: 4px; bottom:4px; font-weight:800; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; font-size: clamp(0.6rem, 2.2vw, 0.85rem); line-height: 1; text-align: center; white-space: nowrap; overflow: hidden; box-sizing: border-box; }
+    .total { position:absolute; left: 2px; right: 2px; bottom:4px; font-weight:800; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 4px; border-radius: 8px; font-size: clamp(0.6rem, 2.2vw, 0.85rem); line-height: 1.1; text-align: center; white-space: nowrap; overflow: hidden; box-sizing: border-box; font-variant-numeric: tabular-nums; }
     .heat { position:absolute; inset:0; background: var(--danger); opacity: 0; pointer-events:none; border-radius: 0; transition: opacity .2s ease; z-index: 0; }
     /* Theme-aware label chips for date/total for consistent contrast */
     body:not(.theme-sleek) .day .date,
@@ -305,6 +305,7 @@
         const totalEl = document.createElement('div'); totalEl.className='total';
         if (totals[k]) {
           const v = Number(totals[k])||0;
+          totalEl.dataset.value = String(v.toFixed(2));
           totalEl.textContent = '$' + v.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
         } else { totalEl.textContent = ''; }
         cell.appendChild(totalEl);
@@ -335,6 +336,18 @@
             fs -= 0.5;
             el.style.fontSize = fs + 'px';
             loops++;
+          }
+          // If still overflowing, drop thousands separators as last resort
+          if (el.scrollWidth > el.clientWidth) {
+            const raw = parseFloat(el.dataset.value||'');
+            if (!isNaN(raw)) {
+              el.textContent = '$' + raw.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2, useGrouping:false});
+              // Try one more gentle shrink
+              fs = parseFloat(getComputedStyle(el).fontSize) || 12;
+              if (el.scrollWidth > el.clientWidth && fs > 8) {
+                el.style.fontSize = (fs - 0.5) + 'px';
+              }
+            }
           }
         });
       } catch {}
@@ -370,6 +383,7 @@
     document.getElementById('todayBtn').onclick=()=>{ const t=new Date(); view=new Date(t.getFullYear(),t.getMonth(),1); selectedKey=keyFor(t); render(); };
     // Re-fit totals on resize/orientation change
     let fitTimer=null; window.addEventListener('resize', ()=>{ clearTimeout(fitTimer); fitTimer = setTimeout(fitTotals, 120); });
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(()=> setTimeout(fitTotals, 0)); }
 
     // Theme toggle integration (sync with main app)
     const themeToggle = document.getElementById('themeToggle');
