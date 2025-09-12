@@ -1440,6 +1440,17 @@
             });
         }
 
+        // One-time migration: collect any existing custom categories from previous data
+        function migrateLegacyCategories(){
+            try {
+                const defaults = new Set(['Housing','Food','Transport','Utilities','Entertainment','Healthcare','Shopping','Other']);
+                const fromTotals = Object.keys(financialData.categories||{});
+                const fromExpenses = Array.isArray(financialData.expenses) ? financialData.expenses.map(e=>String(e.category||'').trim()).filter(Boolean) : [];
+                const all = Array.from(new Set([...fromTotals, ...fromExpenses]));
+                all.forEach(cat => { if (cat && !defaults.has(cat)) registerCategory(cat); });
+            } catch {}
+        }
+
         function getRandomColor() {
             return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
         }
@@ -2348,6 +2359,8 @@
         Object.keys(financialData.categories || {}).forEach(cat => {
             if (!categoryColors[cat]) categoryColors[cat] = getRandomColor();
         });
+        // Migrate any previously used custom categories into persistent storage
+        migrateLegacyCategories();
         // After normalization, (re)wrap arrays so mutations auto-update Advisor
         if (Array.isArray(financialData.expenses)) observeArray(financialData.expenses);
         if (Array.isArray(financialData.checks)) observeArray(financialData.checks);
