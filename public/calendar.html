@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spending Calendar — Money Mate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      --bg-gradient-start: #667eea; --bg-gradient-end: #764ba2; --text-on-bg: #ffffff;
+      --card-bg: #ffffff; --text: #111827; --muted: #6b7280; --border: #e5e7eb; --surface: #f9fafb; --surface-hover: #f3f4f6;
+      --primary: #6366f1; --success: #10b981; --danger: #ef4444; --accent: #a855f7;
+    }
+    body.theme-sleek {
+      --bg-gradient-start: #0b1322; --bg-gradient-end: #192233; --text-on-bg: #eef2ff;
+      --card-bg: rgba(255,255,255,0.065); --text: #e6edf6; --muted: #9fb0c3; --border: rgba(255,255,255,0.16); --surface: rgba(255,255,255,0.045); --surface-hover: rgba(255,255,255,0.08);
+      --primary: #b192ff; --success: #1ee7a1; --danger: #ff5a7a; --accent: #29c7f0;
+    }
+    body { font-family: var(--font-family); background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end)); min-height: 100vh; color: var(--text); margin: 0; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .topbar { display:flex; justify-content: space-between; align-items:center; color: var(--text-on-bg); gap: 12px; padding-right: 140px; }
+    .actions { display:flex; align-items:center; gap: 8px; }
+    /* Toggle copied to match dashboard */
+    .theme-toggle {
+      position: fixed; top: 16px; right: 16px; display:flex; align-items:center; gap:10px;
+      background: var(--card-bg); color: var(--text); border:1px solid var(--border);
+      padding:8px 12px; border-radius:14px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000;
+    }
+    .theme-toggle .toggle-label { font-weight: 600; font-size: 0.9rem; }
+    .theme-toggle .toggle-icon { font-size: 1rem; line-height: 1; opacity: .95; margin: 0 6px 0 2px; position: relative; display: inline-block; }
+    .theme-toggle .toggle-icon.moon { filter: drop-shadow(0 0 0 rgba(139,92,246,0)); }
+    @keyframes moonGlow { 0% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0 rgba(139,92,246,0)); } 35% { transform: scale(1.1) rotate(-6deg); filter: drop-shadow(0 0 10px rgba(139,92,246,0.75)) drop-shadow(0 0 16px rgba(6,182,212,0.55)); } 70% { transform: scale(1.04) rotate(2deg); filter: drop-shadow(0 0 6px rgba(139,92,246,0.5)); } 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0 rgba(139,92,246,0)); } }
+    .glow-pulse { animation: moonGlow 900ms cubic-bezier(.22,.61,.36,1); will-change: transform, filter; }
+    .toggle-icon.moon.glow-pulse::before { content: ""; position: absolute; inset: -10px; border-radius: 50%; background: radial-gradient(circle, rgba(139,92,246,0.28), rgba(6,182,212,0.0) 65%); filter: blur(6px); opacity: 0; animation: moonAura 900ms ease-out; pointer-events: none; }
+    .toggle-icon.moon.glow-pulse::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid rgba(139,92,246,0.5); opacity: 0; animation: moonRing 900ms ease-out; pointer-events: none; }
+    @keyframes moonAura { 0% { opacity: 0; transform: scale(0.85); } 40% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0; transform: scale(1.25); } }
+    @keyframes moonRing { 0% { opacity: 0; transform: scale(0.9); } 35% { opacity: .9; transform: scale(1.05); } 100% { opacity: 0; transform: scale(1.2); } }
+    .spark-particle { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, -50%) scale(.4); opacity: 0.95; pointer-events: none; will-change: transform, opacity; }
+    .spark-particle::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; box-shadow: 0 0 8px currentColor; }
+    @keyframes sparkFly { 0% { transform: translate(-50%, -50%) scale(.4) rotate(0deg); opacity: 1; } 70% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1) rotate(var(--rot, 0deg)); opacity: 1; } 100% { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(.25) rotate(var(--rot, 0deg)); opacity: 0; } }
+    .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface); border: 1px solid var(--border); transition: .2s; border-radius: 999px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 50%; transition: .2s; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .slider::after { content: ""; position: absolute; inset: 0; border-radius: inherit; opacity: 0; background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.35) 40%, transparent 60%); transform: translateX(-30%); }
+    input:checked + .slider { background: linear-gradient(135deg, var(--primary-gradient-start, var(--primary)), var(--primary-gradient-end, var(--accent))); border-color: transparent; }
+    input:checked + .slider::after { animation: sheen 650ms ease-out; }
+    input:checked + .slider:before { transform: translate(20px, -50%); }
+    @keyframes sheen { 0% { opacity: 0; transform: translateX(-30%); } 30% { opacity: .8; } 100% { opacity: 0; transform: translateX(130%); } }
+    @media (max-width: 640px) { .theme-toggle { top: auto; bottom: 12px; right: 12px; padding: 6px 8px; gap: 6px; border-radius: 999px; } .theme-toggle .toggle-label { display:none; } .theme-toggle .toggle-icon { display:inline-block; } .switch { width: 42px; height: 24px; } .slider:before { width: 18px; height: 18px; left: 3px; } input:checked + .slider:before { transform: translate(18px, -50%); } .topbar { padding-right: 0; } }
+    .brand { font-weight: 800; font-size: 1.2rem; text-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+    .btn { background: linear-gradient(135deg, var(--primary), var(--accent)); color:#fff; border:0; padding:10px 16px; border-radius:10px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
+    .card { background: var(--card-bg); border:1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+    .header { display:flex; justify-content: space-between; align-items: center; gap: 12px; margin: 16px 0; color: var(--text-on-bg); }
+    .title { font-size: 1.6rem; font-weight: 800; margin:0; color: var(--text-on-bg); }
+    .subtitle { color: var(--text-on-bg); opacity: .9; margin: 4px 0 0; font-weight: 600; }
+    .grid { display:grid; grid-template-columns: 1fr 320px; gap: 16px; align-items:start; }
+    @media (max-width: 900px){ .grid { grid-template-columns: 1fr; } }
+    .cal { background: var(--card-bg); border:1px solid var(--border); border-radius: 12px; overflow:hidden; }
+    .cal-head { display:flex; justify-content: space-between; align-items:center; padding: 12px 14px; border-bottom:1px solid var(--border); background: var(--surface); }
+    .cal-head .month { font-weight: 800; }
+    .cal-head .nav { display:flex; gap:8px; }
+    .dow { display:grid; grid-template-columns: repeat(7, 1fr); border-bottom:1px solid var(--border); background: var(--surface); }
+    .dow div { padding:8px; text-align:center; font-weight:700; color: var(--muted); }
+    .cells { display:grid; grid-template-columns: repeat(7, 1fr); }
+    .day { position:relative; border-right:1px solid var(--border); border-bottom:1px solid var(--border); min-height: 88px; padding: 8px; background: var(--card-bg); }
+    .day.inactive { background: var(--surface); color: var(--muted); }
+    .day:hover { outline: 2px solid var(--primary); outline-offset: -2px; cursor: pointer; }
+    .date { position: relative; z-index: 1; font-weight: 800; font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; display: inline-block; }
+    .total { position:absolute; right:8px; bottom:8px; font-weight:800; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; }
+    .heat { position:absolute; inset:0; background: var(--danger); opacity: 0; pointer-events:none; border-radius: 0; transition: opacity .2s ease; z-index: 0; }
+    /* Theme-aware label chips for date/total for consistent contrast */
+    body:not(.theme-sleek) .day .date,
+    body:not(.theme-sleek) .day .total { background: rgba(255,255,255,0.95); color: var(--text); border: 1px solid var(--border); text-shadow: none; }
+    body.theme-sleek .day .date,
+    body.theme-sleek .day .total { background: rgba(0,0,0,0.35); color: #f8fafc; text-shadow: 0 1px 2px rgba(0,0,0,0.65); }
+    /* On very hot days in Sleek mode, push text to pure white */
+    body.theme-sleek .day.hot .date,
+    body.theme-sleek .day.hot .total { color: #ffffff; background: rgba(0,0,0,0.35); }
+    .legend { display:flex; align-items:center; gap:8px; color: var(--text-on-bg); font-weight:700; opacity: .9; }
+    .legend .box { width: 16px; height: 10px; border-radius: 3px; background: var(--danger); }
+    .chips { display:flex; flex-wrap: wrap; gap:8px; }
+    .chip { border:1px solid color-mix(in srgb, var(--chip-color, var(--primary)) 50%, var(--border)); background: color-mix(in srgb, var(--chip-color, var(--primary)) 18%, transparent); color: var(--text); padding:6px 12px; border-radius:999px; font-weight:700; cursor:pointer; }
+    .chip.active { background: var(--chip-color, var(--primary)); color:#fff; border-color: transparent; }
+    .list { position:sticky; top:16px; }
+    .list h3 { margin: 0 0 8px; }
+    .items { display:flex; flex-direction:column; gap:8px; }
+    .item { display:flex; justify-content: space-between; align-items:center; gap: 10px; background: var(--surface); border:1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .item .left { display:flex; align-items:center; flex-wrap: wrap; gap:6px; min-width: 0; flex: 1 1 auto; }
+    .item .left .name { font-weight:800; min-width:0; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cat { font-weight:800; padding: 2px 8px; border-radius: 999px; color: #fff; flex: 0 0 auto; }
+    .muted { color: var(--muted); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="theme-toggle" title="Quick settings">
+    <span class="toggle-icon moon" aria-hidden="true" title="Sleek Mode">🌙</span>
+    <label class="switch" title="Sleek Mode: modern dark glass UI (visual only)">
+      <input type="checkbox" id="themeToggle" aria-label="Toggle Sleek Mode (modern dark look)">
+      <span class="slider"></span>
+    </label>
+    <span class="toggle-label"><span id="modeName">Classic</span> Mode</span>
+  </div>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">Money Mate</div>
+      <div class="actions">
+        <a href="index.html" class="btn">← Back to Dashboard</a>
+      </div>
+    </div>
+
+    <div class="header">
+      <div>
+        <div class="title">Spending Calendar</div>
+        <div class="subtitle">See where your money goes, day by day. Click any day for details. Filter by category.</div>
+      </div>
+      <div class="legend"><span class="box" id="legendBox"></span> Higher spend = deeper color</div>
+    </div>
+
+    <div class="grid">
+      <div class="cal" id="calendar">
+        <div class="cal-head">
+          <div class="month" id="monthLabel">Month YYYY</div>
+          <div class="nav">
+            <button class="btn" id="prevBtn" aria-label="Previous month">◀</button>
+            <button class="btn" id="todayBtn">Today</button>
+            <button class="btn" id="nextBtn" aria-label="Next month">▶</button>
+          </div>
+        </div>
+        <div class="dow">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div class="cells" id="cells"></div>
+      </div>
+      <div class="list card">
+        <h3 id="sideTitle">Select a day</h3>
+        <div class="chips" id="chips"></div>
+        <div class="items" id="items"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const getCssVar = (k) => getComputedStyle(document.body).getPropertyValue(k).trim();
+    const fmt = (n) => '$' + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+
+    // Load data from storage
+    function loadFinancial(){
+      let fd = { income:0, expenses:[], categories:{}, checks:[], balance:0 };
+      try {
+        const saved = JSON.parse(localStorage.getItem('financialData')||'null');
+        if (saved && typeof saved==='object') Object.assign(fd, saved);
+      } catch {}
+      return fd;
+    }
+    const categoryColors = (()=>{
+      const base = { Housing:'#ef4444', Food:'#f97316', Transport:'#eab308', Utilities:'#84cc16', Entertainment:'#06b6d4', Healthcare:'#8b5cf6', Shopping:'#ec4899', Other:'#6b7280' };
+      try { const saved = JSON.parse(localStorage.getItem('categoryColors')||'null'); if (saved) Object.assign(base, saved); } catch{}
+      return base;
+    })();
+    const userCategories = (()=>{ try { const arr=JSON.parse(localStorage.getItem('userCategories')||'[]'); return Array.isArray(arr)?arr:[]; } catch { return []; } })();
+
+    // Toggle animations (match dashboard)
+    const prefersReduced = () => { try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
+    function playMoonFx() {
+      if (prefersReduced()) return;
+      try {
+        const moon = document.querySelector('.toggle-icon.moon');
+        if (!moon) return;
+        moon.classList.remove('glow-pulse');
+        void moon.offsetWidth;
+        moon.classList.add('glow-pulse');
+        setTimeout(() => moon.classList.remove('glow-pulse'), 950);
+      } catch {}
+    }
+    function burstAroundMoon() {
+      if (prefersReduced()) return;
+      try {
+        const host = document.querySelector('.toggle-icon.moon');
+        if (!host) return;
+        const count = 8;
+        const colors = [getCssVar('--accent')||'#06b6d4', getCssVar('--success')||'#22c55e', getCssVar('--primary')||'#8b5cf6'];
+        for (let i=0;i<count;i++){
+          const p=document.createElement('span');
+          p.className='spark-particle';
+          const angle=(Math.PI*2*i/count)+(Math.random()*0.6-0.3);
+          const dist=18+Math.random()*14;
+          const x=Math.cos(angle)*dist;
+          const y=Math.sin(angle)*dist*0.9;
+          p.style.setProperty('--x', x+'px');
+          p.style.setProperty('--y', y+'px');
+          p.style.setProperty('--rot', (Math.random()*40-20)+'deg');
+          p.style.color = colors[i%colors.length];
+          p.style.background='currentColor';
+          p.style.animation=`sparkFly ${700+Math.random()*300}ms cubic-bezier(.22,.61,.36,1) forwards`;
+          host.appendChild(p);
+          setTimeout(()=>p.remove(),1100);
+        }
+      } catch {}
+    }
+
+    // State
+    let filterCat = 'All';
+    let view = new Date(); view.setDate(1);
+    let selectedKey = null;
+
+    function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+    function keyFor(d){ return startOfDay(d).toISOString().slice(0,10); }
+
+    function getMonthBounds(dt){
+      const y=dt.getFullYear(), m=dt.getMonth();
+      const start=new Date(y,m,1); const end=new Date(y,m+1,1); return {start,end};
+    }
+
+    function dayTotals(fd){
+      const {start,end} = getMonthBounds(view);
+      const totals = {};
+      const itemsByDay = {};
+      const expenses = Array.isArray(fd.expenses)?fd.expenses:[];
+      const cats = new Set(Object.keys(fd.categories||{}));
+      userCategories.forEach(c=>cats.add(c));
+      // Build chips
+      const chips = document.getElementById('chips');
+      chips.innerHTML='';
+      const all = ['All', ...Array.from(cats)];
+      all.forEach(cat=>{
+        const b=document.createElement('button'); b.className='chip'+(filterCat===cat?' active':''); b.textContent=cat; b.style.setProperty('--chip-color', categoryColors[cat]||getCssVar('--primary')); b.onclick=()=>{ filterCat=cat; render(); }; chips.appendChild(b);
+      });
+      // Aggregate
+      for (const e of expenses){
+        const t=Number(e.id)||0; if(!t) continue; const d=new Date(t); if (d<start || d>=end) continue;
+        if (filterCat!=='All' && String(e.category||'')!==filterCat) continue;
+        const k=keyFor(d);
+        totals[k]=(totals[k]||0)+(parseFloat(e.amount)||0);
+        (itemsByDay[k]||(itemsByDay[k]=[])).push(e);
+      }
+      return {totals, itemsByDay};
+    }
+
+    function render(){
+      const fd = loadFinancial();
+      // Theme: respect saved theme each render to keep palette aligned
+      const savedTheme = localStorage.getItem('theme');
+      document.body.classList.toggle('theme-sleek', savedTheme==='sleek');
+      document.getElementById('legendBox').style.background = getCssVar('--danger') || '#ef4444';
+
+      const monthLabel = document.getElementById('monthLabel');
+      const fmtMonth = view.toLocaleString(undefined,{month:'long', year:'numeric'});
+      monthLabel.textContent = fmtMonth;
+
+      const cells = document.getElementById('cells');
+      cells.innerHTML='';
+      const y=view.getFullYear(), m=view.getMonth();
+      const first = new Date(y,m,1); const firstDow = first.getDay();
+      const daysInMonth = new Date(y,m+1,0).getDate();
+      const prevDays = new Date(y,m,0).getDate();
+
+      const {totals, itemsByDay} = dayTotals(fd);
+      const vals = Object.values(totals);
+      const max = vals.length? Math.max(...vals) : 0;
+      const p90 = vals.length? vals.slice().sort((a,b)=>a-b)[Math.floor(vals.length*0.9)] : 0;
+      const scale = (n)=>{ if (!n) return 0; const d = p90||max||1; return Math.min(1, n/(d||1)); };
+
+      // Build 6 weeks (7 columns x 6 rows)
+      for (let i=0;i<42;i++){
+        const cell = document.createElement('div'); cell.className='day';
+        const dateNum = i - firstDow + 1;
+        let date, inactive=false;
+        if (dateNum<1){ date=new Date(y,m-1, prevDays+dateNum); inactive=true; }
+        else if (dateNum>daysInMonth){ date=new Date(y,m, dateNum); inactive=true; }
+        else { date=new Date(y,m,dateNum); inactive=false; }
+        const k = keyFor(date);
+        if (inactive) cell.classList.add('inactive');
+
+        const heat = document.createElement('div'); heat.className='heat';
+        const intensity = scale(totals[k]||0);
+        heat.style.opacity = String(intensity*0.85);
+        heat.style.background = getCssVar('--danger')||'#ef4444';
+        cell.appendChild(heat);
+
+        const dateEl = document.createElement('div'); dateEl.className='date'; dateEl.textContent = String(date.getDate()); cell.appendChild(dateEl);
+        const totalEl = document.createElement('div'); totalEl.className='total'; totalEl.textContent = totals[k]? fmt(totals[k]) : ''; cell.appendChild(totalEl);
+        // Mark as hot when intensity crosses threshold for better text contrast
+        if (intensity > 0.4) cell.classList.add('hot');
+        cell.onclick=()=>{ selectedKey=k; renderSide(itemsByDay, date); };
+        const todayK = keyFor(new Date()); if (k===todayK && !inactive){ cell.style.outline='2px solid '+(getCssVar('--primary')||'#6366f1'); cell.style.outlineOffset='-2px'; }
+        cells.appendChild(cell);
+      }
+
+      if (selectedKey){ const d = new Date(selectedKey+'T00:00:00'); renderSide(dayTotals(fd).itemsByDay, d); }
+    }
+
+    function renderSide(itemsByDay, date){
+      const k = keyFor(date);
+      const items = itemsByDay[k]||[];
+      const title = document.getElementById('sideTitle');
+      title.textContent = date.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'});
+      const container = document.getElementById('items'); container.innerHTML='';
+      if (!items.length){ const div=document.createElement('div'); div.className='muted'; div.textContent='No expenses.'; container.appendChild(div); return; }
+      items.sort((a,b)=> (b.amount||0)-(a.amount||0));
+      for (const e of items){
+        const row = document.createElement('div'); row.className='item';
+        const left = document.createElement('div'); left.className = 'left';
+        const nm = document.createElement('div'); nm.className = 'name'; nm.textContent = (e.name||'');
+        const cat = document.createElement('span'); cat.className='cat'; cat.textContent = String(e.category||'Other'); cat.style.background = categoryColors[e.category]||getCssVar('--primary'); cat.style.marginLeft='6px';
+        left.appendChild(nm); left.appendChild(cat);
+        const amt = document.createElement('div'); amt.textContent = fmt(e.amount); amt.style.fontWeight='800';
+        row.appendChild(left); row.appendChild(amt); container.appendChild(row);
+      }
+    }
+
+    document.getElementById('prevBtn').onclick=()=>{ view.setMonth(view.getMonth()-1); selectedKey=null; render(); };
+    document.getElementById('nextBtn').onclick=()=>{ view.setMonth(view.getMonth()+1); selectedKey=null; render(); };
+    document.getElementById('todayBtn').onclick=()=>{ const t=new Date(); view=new Date(t.getFullYear(),t.getMonth(),1); selectedKey=keyFor(t); render(); };
+
+    // Theme toggle integration (sync with main app)
+    const themeToggle = document.getElementById('themeToggle');
+    const modeNameEl = document.getElementById('modeName');
+    const applySavedTheme = () => {
+      const saved = localStorage.getItem('theme');
+      const sleek = saved === 'sleek';
+      document.body.classList.toggle('theme-sleek', sleek);
+      if (themeToggle) themeToggle.checked = sleek;
+      if (modeNameEl) modeNameEl.textContent = sleek ? 'Sleek' : 'Classic';
+    };
+    applySavedTheme();
+    if (themeToggle) themeToggle.addEventListener('change', ()=>{
+      const enabled = !!themeToggle.checked;
+      document.body.classList.toggle('theme-sleek', enabled);
+      localStorage.setItem('theme', enabled ? 'sleek' : 'classic');
+      if (modeNameEl) modeNameEl.textContent = enabled ? 'Sleek' : 'Classic';
+      playMoonFx();
+      burstAroundMoon();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
