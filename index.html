@@ -1310,6 +1310,8 @@
             balance: 0,
             planned: []
         };
+        // User-defined categories that persist across sessions
+        let userCategories = [];
 
         // Real-time Advisor sync helpers
         let advisorTick = null;
@@ -1349,6 +1351,9 @@
                 localStorage.setItem('balance', String(financialData.balance));
                 localStorage.setItem('savings', String(financialData.savings || 0));
                 localStorage.setItem('savingsGoal', String(financialData.savingsGoal || 0));
+                // Persist custom categories and colors
+                try { localStorage.setItem('userCategories', JSON.stringify(Array.from(new Set(userCategories)))); } catch {}
+                try { localStorage.setItem('categoryColors', JSON.stringify(categoryColors)); } catch {}
             } catch (e) {
                 console.error('Failed to save data', e);
             }
@@ -1395,6 +1400,45 @@
             'Shopping': '#ec4899',
             'Other': '#6b7280'
         };
+        // Merge in any persisted colors
+        try {
+            const savedColors = JSON.parse(localStorage.getItem('categoryColors')||'null');
+            if (savedColors && typeof savedColors === 'object') {
+                Object.keys(savedColors).forEach(k => { const v = String(savedColors[k]||'').trim(); if (v) categoryColors[k] = v; });
+            }
+        } catch {}
+
+        function loadUserCategories(){
+            try {
+                const arr = JSON.parse(localStorage.getItem('userCategories')||'[]');
+                if (Array.isArray(arr)) userCategories = Array.from(new Set(arr.map(x=>String(x||'').trim()).filter(Boolean)));
+            } catch { userCategories = []; }
+        }
+
+        function registerCategory(name){
+            const cat = String(name||'').trim();
+            if (!cat) return;
+            if (!categoryColors[cat]) { categoryColors[cat] = getRandomColor(); try { localStorage.setItem('categoryColors', JSON.stringify(categoryColors)); } catch {} }
+            if (!userCategories.includes(cat)) { userCategories.push(cat); try { localStorage.setItem('userCategories', JSON.stringify(userCategories)); } catch {} }
+            syncCategoryOptions();
+        }
+
+        function syncCategoryOptions(){
+            const sel = document.getElementById('expenseCategory');
+            if (!sel) return;
+            const have = new Set(Array.from(sel.options).map(o=>o.value));
+            const known = new Set([
+                ...Object.keys(categoryColors||{}),
+                ...Object.keys(financialData.categories||{}),
+                ...userCategories
+            ]);
+            known.forEach(cat => {
+                if (!have.has(cat)) {
+                    const opt = document.createElement('option');
+                    opt.value = cat; opt.textContent = cat; sel.appendChild(opt);
+                }
+            });
+        }
 
         function getRandomColor() {
             return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
@@ -1629,9 +1673,8 @@
             if (!financialData.categories[category]) {
                 financialData.categories[category] = 0;
             }
-            if (!categoryColors[category]) {
-                categoryColors[category] = getRandomColor();
-            }
+            // Persist and colorize this category for reuse
+            try { registerCategory(category); } catch {}
             financialData.categories[category] += amount;
 
             // Clear inputs
@@ -1750,7 +1793,7 @@
             financialData.categories[oldCategory] = (financialData.categories[oldCategory] || 0) - oldAmount;
             if (financialData.categories[oldCategory] <= 0) { delete financialData.categories[oldCategory]; }
             if (!financialData.categories[newCategory]) financialData.categories[newCategory] = 0;
-            if (!categoryColors[newCategory]) categoryColors[newCategory] = getRandomColor();
+            registerCategory(newCategory);
             financialData.categories[newCategory] += newAmount;
 
             // Update expense entry
@@ -1871,7 +1914,8 @@
 
         function renderFilterChips() {
             const chips = document.getElementById('filterChips');
-            const cats = ['All', ...Object.keys(financialData.categories)];
+            const extra = (Array.isArray(userCategories) ? userCategories : []);
+            const cats = ['All', ...Array.from(new Set([ ...Object.keys(financialData.categories), ...extra]))];
             chips.innerHTML = '';
             cats.forEach(cat => {
                 const el = document.createElement('button');
@@ -2289,6 +2333,8 @@
 
         // Load saved data and render initial UI
         loadData();
+        // Load user-defined categories and ensure they appear in the selector
+        loadUserCategories();
         // Normalize any legacy expenses to include name field
         if (Array.isArray(financialData.expenses)) {
             financialData.expenses = financialData.expenses.map(e => ({
@@ -2309,6 +2355,9 @@
         renderChecks();
         renderExpenses();
         renderFilterChips();
+        // Ensure the Add Expense category dropdown includes user categories
+        syncCategoryOptions();
+        syncCategoryOptions();
         const bInputInit = document.getElementById('balanceInput');
         if (bInputInit) bInputInit.value = String(financialData.balance.toFixed(2));
         const incomeInputInit = document.getElementById('income');
