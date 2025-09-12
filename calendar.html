@@ -79,9 +79,9 @@
     /* Theme-aware label chips for date/total for consistent contrast */
     body:not(.theme-sleek) .day .date { background: rgba(255,255,255,0.95); color: var(--text); border: 1px solid var(--border); text-shadow: none; }
     body:not(.theme-sleek) .band { background: rgba(255,255,255,0.92); }
-    /* Classic: revert totals to original neutral text color */
-    body:not(.theme-sleek) .band .total { color: var(--text); text-shadow: none; }
-    body:not(.theme-sleek) .day .total { color: var(--text); text-shadow: none; }
+    /* Classic: use muted neutral for totals (cleaner than pure black) */
+    body:not(.theme-sleek) .band .total { color: var(--muted); text-shadow: none; }
+    body:not(.theme-sleek) .day .total { color: var(--muted); text-shadow: none; }
 
     /* Mobile: tighten sizes to avoid overlap in small cells */
     @media (max-width: 480px) {
