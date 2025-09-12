@@ -217,7 +217,13 @@
     let selectedKey = null;
 
     function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
-    function keyFor(d){ return startOfDay(d).toISOString().slice(0,10); }
+    function keyFor(d){
+      const x = startOfDay(d);
+      const y = x.getFullYear();
+      const m = String(x.getMonth()+1).padStart(2,'0');
+      const day = String(x.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    }
 
     function getMonthBounds(dt){
       const y=dt.getFullYear(), m=dt.getMonth();
@@ -243,7 +249,9 @@
         const t=Number(e.id)||0; if(!t) continue; const d=new Date(t); if (d<start || d>=end) continue;
         if (filterCat!=='All' && String(e.category||'')!==filterCat) continue;
         const k=keyFor(d);
-        totals[k]=(totals[k]||0)+(parseFloat(e.amount)||0);
+        const amt = Number(e.amount);
+        const cents = isFinite(amt) ? Math.round(amt * 100) : 0;
+        totals[k] = (totals[k]||0) + (cents/100);
         (itemsByDay[k]||(itemsByDay[k]=[])).push(e);
       }
       return {totals, itemsByDay};
