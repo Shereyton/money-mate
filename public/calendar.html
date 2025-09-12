@@ -78,10 +78,10 @@
     .heat { position:absolute; inset:0; background: var(--danger); opacity: 0; pointer-events:none; border-radius: 0; transition: opacity .2s ease; z-index: 0; }
     /* Theme-aware label chips for date/total for consistent contrast */
     body:not(.theme-sleek) .day .date { background: rgba(255,255,255,0.95); color: var(--text); border: 1px solid var(--border); text-shadow: none; }
-    /* Classic: revert to original — light band + dark text for high readability */
+    /* Classic: original feel — light band + brand color totals for clear, readable emphasis */
     body:not(.theme-sleek) .band { background: rgba(255,255,255,0.96); border-top: 1px solid var(--border); }
     body:not(.theme-sleek) .band .total,
-    body:not(.theme-sleek) .day .total { color: var(--text); text-shadow: none; }
+    body:not(.theme-sleek) .day .total { color: var(--primary); text-shadow: none; }
 
     /* Mobile: tighten sizes to avoid overlap in small cells */
     @media (max-width: 480px) {
