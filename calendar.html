@@ -69,9 +69,9 @@
     .day { position:relative; overflow: hidden; aspect-ratio: 1; min-height: 0; padding: 6px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; display:grid; place-items:center; text-align:center; }
     .day.inactive { background: var(--surface); color: var(--muted); }
     .day:hover { outline: 2px solid var(--primary); outline-offset: -2px; cursor: pointer; }
-    .date { position: relative; z-index: 1; font-weight: 800; font-size: clamp(0.9rem, 3.2vw, 1.05rem); line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; display: inline-block; text-align:center; user-select: none; pointer-events: none; }
+    .date { position: absolute; top: 6px; left: 6px; z-index: 1; font-weight: 800; font-size: clamp(0.8rem, 2.8vw, 1rem); line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; display: inline-block; user-select: none; pointer-events: none; }
     .day.has-data .date { font-size: clamp(0.85rem, 2.8vw, 1rem); }
-    .total { position:absolute; right:8px; bottom:8px; font-weight:800; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; font-size: 0.78rem; line-height: 1; }
+    .total { position:absolute; left: 4px; right: 4px; bottom:4px; font-weight:800; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; font-size: clamp(0.6rem, 2.2vw, 0.85rem); line-height: 1; text-align: center; }
     .heat { position:absolute; inset:0; background: var(--danger); opacity: 0; pointer-events:none; border-radius: 0; transition: opacity .2s ease; z-index: 0; }
     /* Theme-aware label chips for date/total for consistent contrast */
     body:not(.theme-sleek) .day .date,
@@ -81,8 +81,8 @@
     @media (max-width: 480px) {
       .day { min-height: 0; padding: 4px; }
       .dow div { font-size: 0.78rem; padding: 6px; }
-      .date { font-size: 0.85rem; padding: 0 4px; }
-      .total { display: block; font-size: 0.65rem; padding: 0 3px; right: 3px; bottom: 3px; }
+      .date { top: 4px; left: 4px; font-size: 0.82rem; padding: 0 4px; }
+      .total { left: 3px; right: 3px; bottom: 3px; font-size: 0.68rem; padding: 0 3px; }
     }
     body.theme-sleek .day .date,
     body.theme-sleek .day .total { background: rgba(0,0,0,0.35); color: #f8fafc; text-shadow: 0 1px 2px rgba(0,0,0,0.65); }
