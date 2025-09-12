@@ -376,7 +376,7 @@
         }
 
         /* Expense list layout helpers */
-        .expense-item > .primary { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .expense-item > .primary { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 240px; }
         .expense-item .expense-name { color: var(--muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
         .expense-item .amount { font-weight: 600; color: var(--text); white-space: nowrap; }
         .expense-item .actions { display: flex; gap: 8px; }
@@ -578,6 +578,10 @@
             font-size: 0.85rem;
             font-weight: 600;
             color: white;
+            max-width: 100%;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
 
         .delete-btn {
@@ -884,6 +888,11 @@
         <div class="header">
             <h1>💰 Financial Tracker Pro</h1>
             <p>Your complete financial clarity dashboard</p>
+            <div style="margin-top:12px;">
+                <a href="calendar.html" class="btn" style="text-decoration:none;">
+                    📅 Open Spending Calendar
+                </a>
+            </div>
         </div>
 
         <div class="dashboard">
@@ -2369,7 +2378,6 @@
         renderExpenses();
         renderFilterChips();
         // Ensure the Add Expense category dropdown includes user categories
-        syncCategoryOptions();
         syncCategoryOptions();
         const bInputInit = document.getElementById('balanceInput');
         if (bInputInit) bInputInit.value = String(financialData.balance.toFixed(2));
