@@ -1521,6 +1521,13 @@
 
             financialData.checks.push(check);
 
+            // Auto-add to balance when a check is deposited
+            financialData.balance = (parseFloat(financialData.balance) || 0) + amount;
+            const bInput = document.getElementById('balanceInput');
+            if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+            animateValue('balanceDisplay', financialData.balance);
+            updateBalanceClass();
+
             document.getElementById('checkNumber').value = '';
             document.getElementById('checkAmount').value = '';
 
@@ -1534,7 +1541,14 @@
         function deleteCheck(id) {
             const idx = financialData.checks.findIndex(c => c.id === id);
             if (idx !== -1) {
+                const amt = financialData.checks[idx].amount || 0;
                 financialData.checks.splice(idx, 1);
+                // Remove the amount from balance when a check is deleted
+                financialData.balance = (parseFloat(financialData.balance) || 0) - amt;
+                const bInput = document.getElementById('balanceInput');
+                if (bInput) bInput.value = String(financialData.balance.toFixed(2));
+                animateValue('balanceDisplay', financialData.balance);
+                updateBalanceClass();
                 updateIncomeFromChecks();
                 renderChecks();
                 showToast('Deleted check', 'warn');
