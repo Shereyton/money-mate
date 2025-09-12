@@ -1065,6 +1065,7 @@
                 </div>
             </div>
             <div class="help-text" style="margin: 6px 0 8px;">Quick guide: We look at your balance, set aside a safety cushion, subtract upcoming bills (and typical spending for the rest of the month if enabled), and show what’s safe to spend.</div>
+            <div class="help-text" id="advisorTip" style="font-weight:700; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin: 8px 0;">Loading guidance…</div>
             <div class="controls">
                 <div class="input-group">
                     <label for="reservePercent">Safety cushion (%) <span class="info" tabindex="0" aria-label="What is the Safety Cushion?" data-tip="We keep this percent of your money set aside so you don’t spend it by mistake. Bigger number = more saved, less to spend each day. 30% is a good starting point. You can change it anytime.">ⓘ</span></label>
@@ -1076,7 +1077,7 @@
                 <summary style="cursor:pointer; font-weight:700; color:var(--text);">Advanced settings</summary>
                 <div class="form-row" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
                     <div class="input-group">
-                        <label for="reserveBasis">Cushion based on</label>
+                        <label for="reserveBasis">Cushion based on <span class="info" tabindex="0" aria-label="Cushion basis" data-tip="Pick what to base the safety cushion on: your Balance, Income, or both.">ⓘ</span></label>
                         <select id="reserveBasis">
                             <option value="balance">Balance</option>
                             <option value="income">Income</option>
@@ -1084,7 +1085,7 @@
                         </select>
                     </div>
                     <div class="input-group">
-                        <label for="useProjection">Account for usual spending</label>
+                        <label for="useProjection">Account for usual spending <span class="info" tabindex="0" aria-label="Usual spending" data-tip="We estimate typical spending for the rest of the period using your recent pace.">ⓘ</span></label>
                         <select id="useProjection">
                             <option value="on" selected>On</option>
                             <option value="off">Off</option>
@@ -1093,14 +1094,14 @@
                 </div>
                 <div class="form-row" id="rowCycleFreq" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
                     <div class="input-group">
-                        <label for="advisorCycle">Budget period</label>
+                        <label for="advisorCycle">Budget period <span class="info" tabindex="0" aria-label="Budget period" data-tip="Use ‘This month’ or ‘Until next payday’ to spread your Safe To Spend.">ⓘ</span></label>
                         <select id="advisorCycle">
                             <option value="month" selected>This month</option>
                             <option value="paycheck">Until next paycheck</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label for="payFrequency">Pay schedule</label>
+                        <label for="payFrequency">Pay schedule <span class="info" tabindex="0" aria-label="Pay schedule" data-tip="Helps figure out how many days are left until your next payday.">ⓘ</span></label>
                         <select id="payFrequency">
                             <option value="weekly">Weekly</option>
                             <option value="biweekly" selected>Bi-weekly (every 2 weeks)</option>
@@ -1111,23 +1112,23 @@
                 </div>
                 <div class="form-row" id="rowAnchorMonthly" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
                     <div class="input-group">
-                        <label for="payAnchor">Last payday</label>
+                        <label for="payAnchor">Last payday <span class="info" tabindex="0" aria-label="Last payday" data-tip="Used with your pay schedule to find the next payday.">ⓘ</span></label>
                         <input type="date" id="payAnchor" />
                     </div>
                     <div class="input-group">
-                        <label for="payMonthlyDay">Monthly payday (1–28)</label>
+                        <label for="payMonthlyDay">Monthly payday (1–28) <span class="info" tabindex="0" aria-label="Monthly payday" data-tip="Tell us which day you’re usually paid to set the period.">ⓘ</span></label>
                         <input type="number" id="payMonthlyDay" min="1" max="28" placeholder="e.g., 15" />
                     </div>
                 </div>
                 <div class="form-row" id="rowNextPay" style="grid-template-columns: 1fr; gap:10px; margin-top:8px; display:none;">
                     <div class="input-group">
-                        <label for="nextPayDate">Next payday (pick a date)</label>
+                        <label for="nextPayDate">Next payday (pick a date) <span class="info" tabindex="0" aria-label="Next payday" data-tip="If you know it, set the date. We’ll use it to guide your per‑day budget.">ⓘ</span></label>
                         <input type="date" id="nextPayDate" />
                     </div>
                 </div>
                 <div class="form-row" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
                     <div class="input-group">
-                        <label for="projectionMode">Projection mode</label>
+                        <label for="projectionMode">Projection mode <span class="info" tabindex="0" aria-label="Projection mode" data-tip="Conservative expects lower typical spending; Aggressive expects higher. Normal is balanced.">ⓘ</span></label>
                         <select id="projectionMode">
                             <option value="conservative">Conservative</option>
                             <option value="normal" selected>Normal</option>
@@ -1135,7 +1136,7 @@
                         </select>
                     </div>
                     <div class="input-group">
-                        <label for="cushionOverride">Use cushion this period</label>
+                        <label for="cushionOverride">Use cushion this period <span class="info" tabindex="0" aria-label="Use cushion" data-tip="Temporarily allow using part of your cushion this period.">ⓘ</span></label>
                         <div style="display:flex; gap:8px; align-items:center;">
                             <label class="group-toggle" style="margin:0;"><input type="checkbox" id="useCushionNow"> Allow use</label>
                             <input type="number" id="cushionOverride" step="0.01" min="0" placeholder="0.00" style="flex:1;">
@@ -2979,6 +2980,27 @@
                     if (deficit > 0 && safe <= 0.005) safeKpi.classList.add('warn'); else safeKpi.classList.remove('warn');
                 }
                 const perDayKpi = document.getElementById('kpiPerDay'); if (perDayKpi) { if (deficit>0 && safe<=0.005) perDayKpi.classList.add('warn'); else perDayKpi.classList.remove('warn'); }
+
+                // Friendly, visible guidance under the KPIs
+                const tipEl = document.getElementById('advisorTip');
+                if (tipEl) {
+                    let msg = '';
+                    if (deficit > 0 && safe <= 0.005) {
+                        msg = `You're short by ${fmt(deficit)}. Add funds, lower the cushion, or cut planned/typical spending.`;
+                        tipEl.style.color = getCssVar('--danger') || '#ef4444';
+                    } else if (safe > 0) {
+                        if (daysLeft <= 1) {
+                            msg = `Aim to spend ≤ ${fmt(safe)} today. Cushion ${fmt(reserveEff)} and ${fmt(planned)} in bills are set aside.`;
+                        } else {
+                            msg = `Aim for ${fmt(perDay)}/day for ${daysLeft} days. Cushion ${fmt(reserveEff)} and ${fmt(planned)} in bills are set aside.`;
+                        }
+                        tipEl.style.color = getCssVar('--text') || '#374151';
+                    } else {
+                        msg = `You're at your cushion. Avoid extra spending, or lower the cushion if needed.`;
+                        tipEl.style.color = getCssVar('--text') || '#374151';
+                    }
+                    tipEl.textContent = msg;
+                }
             } catch {}
         }
     </script>
