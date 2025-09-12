@@ -78,10 +78,10 @@
     .heat { position:absolute; inset:0; background: var(--danger); opacity: 0; pointer-events:none; border-radius: 0; transition: opacity .2s ease; z-index: 0; }
     /* Theme-aware label chips for date/total for consistent contrast */
     body:not(.theme-sleek) .day .date { background: rgba(255,255,255,0.95); color: var(--text); border: 1px solid var(--border); text-shadow: none; }
-    /* Classic: original feel — light band + brand color totals for clear, readable emphasis */
+    /* Classic: black bubble with white text for totals */
     body:not(.theme-sleek) .band { background: rgba(255,255,255,0.96); border-top: 1px solid var(--border); }
     body:not(.theme-sleek) .band .total,
-    body:not(.theme-sleek) .day .total { color: var(--primary); text-shadow: none; }
+    body:not(.theme-sleek) .day .total { background: rgba(0,0,0,0.9); color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); border-radius: 10px; padding: 2px 6px; }
 
     /* Mobile: tighten sizes to avoid overlap in small cells */
     @media (max-width: 480px) {
@@ -93,9 +93,9 @@
     }
     body.theme-sleek .day .date { background: rgba(0,0,0,0.35); color: #f8fafc; text-shadow: 0 1px 2px rgba(0,0,0,0.65); }
     body.theme-sleek .band { background: rgba(0,0,0,0.35); border-top: 1px solid rgba(255,255,255,0.16); }
-    /* Sleek: ensure strong contrast for totals */
-    body.theme-sleek .band .total { color: #f8fafc; }
-    body.theme-sleek .day .total { color: #f8fafc; }
+    /* Sleek: also use black bubble with white text for consistency */
+    body.theme-sleek .band .total,
+    body.theme-sleek .day .total { background: rgba(0,0,0,0.9); color: #f8fafc; border-radius: 10px; padding: 2px 6px; }
     /* On very hot days in Sleek mode, push text to pure white */
     body.theme-sleek .day.hot .date,
     body.theme-sleek .day.hot .total { color: #ffffff; background: rgba(0,0,0,0.35); }
