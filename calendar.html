@@ -302,12 +302,7 @@
         const totalEl = document.createElement('div'); totalEl.className='total';
         if (totals[k]) {
           const v = Number(totals[k])||0;
-          const w = Math.max(document.documentElement.clientWidth||0, window.innerWidth||0);
-          if (w <= 480) {
-            totalEl.textContent = (v>=1000000) ? ('$'+(v/1000000).toFixed(1).replace(/\.0$/,'')+'m') : (v>=1000 ? ('$'+(v/1000).toFixed(1).replace(/\.0$/,'')+'k') : ('$'+Math.round(v).toLocaleString()));
-          } else {
-            totalEl.textContent = fmt(v);
-          }
+          totalEl.textContent = '$' + v.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
         } else { totalEl.textContent = ''; }
         cell.appendChild(totalEl);
         if (totals[k]) cell.classList.add('has-data');
