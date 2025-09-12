@@ -59,17 +59,17 @@
     .subtitle { color: var(--text-on-bg); opacity: .9; margin: 4px 0 0; font-weight: 600; }
     .grid { display:grid; grid-template-columns: 1fr 320px; gap: 16px; align-items:start; }
     @media (max-width: 900px){ .grid { grid-template-columns: 1fr; } }
-    .cal { background: var(--card-bg); border:1px solid var(--border); border-radius: 12px; overflow:hidden; }
+    .cal { background: var(--border); border:0; border-radius: 12px; overflow:hidden; }
     .cal-head { display:flex; justify-content: space-between; align-items:center; padding: 12px 14px; border-bottom:1px solid var(--border); background: var(--surface); }
     .cal-head .month { font-weight: 800; }
     .cal-head .nav { display:flex; gap:8px; }
     .dow { display:grid; grid-template-columns: repeat(7, 1fr); border-bottom:1px solid var(--border); background: var(--surface); }
     .dow div { padding:8px; text-align:center; font-weight:700; color: var(--muted); }
-    .cells { display:grid; grid-template-columns: repeat(7, 1fr); }
-    .day { position:relative; border-right:1px solid var(--border); border-bottom:1px solid var(--border); min-height: 88px; padding: 8px; background: var(--card-bg); }
+    .cells { display:grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+    .day { position:relative; overflow: hidden; min-height: 88px; padding: 8px; background: var(--card-bg); display:flex; align-items:center; justify-content:center; }
     .day.inactive { background: var(--surface); color: var(--muted); }
     .day:hover { outline: 2px solid var(--primary); outline-offset: -2px; cursor: pointer; }
-    .date { position: absolute; left: 8px; top: 8px; z-index: 1; font-weight: 800; font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; display: inline-block; }
+    .date { position: relative; z-index: 1; font-weight: 800; font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; display: inline-block; }
     .total { position:absolute; right:8px; bottom:8px; font-weight:800; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; }
     .heat { position:absolute; inset:0; background: var(--danger); opacity: 0; pointer-events:none; border-radius: 0; transition: opacity .2s ease; z-index: 0; }
     /* Theme-aware label chips for date/total for consistent contrast */
@@ -81,7 +81,6 @@
       .day { min-height: 64px; }
       .dow div { font-size: 0.8rem; padding: 6px; }
       .date, .total { font-size: 0.8rem; padding: 0 4px; }
-      .date { left: 4px; top: 4px; }
       .total { right: 4px; bottom: 4px; }
     }
     body.theme-sleek .day .date,
