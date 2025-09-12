@@ -69,12 +69,21 @@
     .day { position:relative; border-right:1px solid var(--border); border-bottom:1px solid var(--border); min-height: 88px; padding: 8px; background: var(--card-bg); }
     .day.inactive { background: var(--surface); color: var(--muted); }
     .day:hover { outline: 2px solid var(--primary); outline-offset: -2px; cursor: pointer; }
-    .date { position: relative; z-index: 1; font-weight: 800; font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; display: inline-block; }
+    .date { position: absolute; left: 8px; top: 8px; z-index: 1; font-weight: 800; font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; display: inline-block; }
     .total { position:absolute; right:8px; bottom:8px; font-weight:800; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 8px; }
     .heat { position:absolute; inset:0; background: var(--danger); opacity: 0; pointer-events:none; border-radius: 0; transition: opacity .2s ease; z-index: 0; }
     /* Theme-aware label chips for date/total for consistent contrast */
     body:not(.theme-sleek) .day .date,
     body:not(.theme-sleek) .day .total { background: rgba(255,255,255,0.95); color: var(--text); border: 1px solid var(--border); text-shadow: none; }
+
+    /* Mobile: tighten sizes to avoid overlap in small cells */
+    @media (max-width: 420px) {
+      .day { min-height: 64px; }
+      .dow div { font-size: 0.8rem; padding: 6px; }
+      .date, .total { font-size: 0.8rem; padding: 0 4px; }
+      .date { left: 4px; top: 4px; }
+      .total { right: 4px; bottom: 4px; }
+    }
     body.theme-sleek .day .date,
     body.theme-sleek .day .total { background: rgba(0,0,0,0.35); color: #f8fafc; text-shadow: 0 1px 2px rgba(0,0,0,0.65); }
     /* On very hot days in Sleek mode, push text to pure white */
