@@ -362,6 +362,19 @@
             background: var(--surface-hover);
         }
 
+        /* Ensure expense text stays readable on hover (both themes) */
+        .expense-item:hover .expense-name,
+        .expense-item:hover .amount {
+            color: var(--text) !important;
+        }
+        /* Sleek (dark) theme: add subtle edge for readability over vibrant cards */
+        body.theme-sleek .expense-item .expense-name,
+        body.theme-sleek .expense-item .amount,
+        body.theme-sleek .expense-item:hover .expense-name,
+        body.theme-sleek .expense-item:hover .amount {
+            text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+        }
+
         /* Expense list layout helpers */
         .expense-item > .primary { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
         .expense-item .expense-name { color: var(--muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
