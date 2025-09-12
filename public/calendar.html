@@ -96,6 +96,8 @@
     .chip.active { background: var(--chip-color, var(--primary)); color:#fff; border-color: transparent; }
     .list { position:sticky; top:16px; }
     .list h3 { margin: 0 0 8px; }
+    .summary { display:flex; align-items:center; justify-content: space-between; gap: 10px; margin: 6px 0 10px; font-weight: 800; }
+    .summary .label { color: var(--muted); font-weight: 700; }
     .items { display:flex; flex-direction:column; gap:8px; }
     .item { display:flex; justify-content: space-between; align-items:center; gap: 10px; background: var(--surface); border:1px solid var(--border); border-radius: 10px; padding: 10px; }
     .item .left { display:flex; align-items:center; flex-wrap: wrap; gap:6px; min-width: 0; flex: 1 1 auto; }
@@ -147,6 +149,7 @@
       <div class="list card">
         <h3 id="sideTitle">Select a day</h3>
         <div class="chips" id="chips"></div>
+        <div class="summary"><span class="label">Day Total</span><span id="dayTotal">$0.00</span></div>
         <div class="items" id="items"></div>
       </div>
     </div>
@@ -343,6 +346,12 @@
       const title = document.getElementById('sideTitle');
       title.textContent = date.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'});
       const container = document.getElementById('items'); container.innerHTML='';
+      // Exact total in cents for accuracy
+      try {
+        const totalCents = items.reduce((s,e)=> s + Math.round((parseFloat(e.amount)||0)*100), 0);
+        const totalStr = '$' + (totalCents/100).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+        const dayTotalEl = document.getElementById('dayTotal'); if (dayTotalEl) dayTotalEl.textContent = totalStr;
+      } catch {}
       if (!items.length){ const div=document.createElement('div'); div.className='muted'; div.textContent='No expenses.'; container.appendChild(div); return; }
       items.sort((a,b)=> (b.amount||0)-(a.amount||0));
       for (const e of items){
