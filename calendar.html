@@ -307,7 +307,8 @@
 
         const heat = document.createElement('div'); heat.className='heat';
         const intensity = scale(totals[k]||0);
-        heat.style.opacity = String(intensity*0.85);
+        const op = Math.min(0.5, 0.25 + intensity*0.35);
+        heat.style.opacity = String(op);
         heat.style.background = getCssVar('--danger')||'#ef4444';
         cell.appendChild(heat);
 
