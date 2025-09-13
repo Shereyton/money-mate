@@ -77,8 +77,9 @@
     .total .cents { font-weight: 800; font-size: .82em; letter-spacing: 0; }
     .heat { position:absolute; inset:0; background: var(--danger); opacity: 0; pointer-events:none; border-radius: 0; transition: opacity .2s ease; z-index: 0; }
     /* Theme-aware label chips for date/total for consistent contrast */
-    body:not(.theme-sleek) .day .date,
-    body:not(.theme-sleek) .day .total { background: rgba(255,255,255,0.95); color: var(--text); border: 1px solid var(--border); text-shadow: none; }
+    body:not(.theme-sleek) .day .date { background: rgba(255,255,255,0.95); color: var(--text); border: 1px solid var(--border); text-shadow: none; }
+    /* Classic: remove bubble from total for a more fluent look */
+    body:not(.theme-sleek) .day .total { background: transparent; color: var(--text); border: 0; text-shadow: none; padding: 0; }
 
     /* Mobile: tighten sizes to avoid overlap in small cells */
     @media (max-width: 480px) {
